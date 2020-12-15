@@ -1,12 +1,12 @@
-mod day_14;
+mod day_15;
 
 use std::time::Instant;
 
 fn main() {
     let start = Instant::now();
 
-    println!("Puzzle 1: {}", day_14::solve_puzzle_1());
-    println!("Puzzle 2: {}", day_14::solve_puzzle_2());
+    println!("Puzzle 1: {}", day_15::solve_puzzle_1());
+    println!("Puzzle 2: {}", day_15::solve_puzzle_2());
 
     println!(
         "Time Elapsed: {} ms",
