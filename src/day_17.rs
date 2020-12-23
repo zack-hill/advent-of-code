@@ -1,51 +1,48 @@
+use itertools::Itertools;
 use std::io::{BufRead, BufReader};
 use std::{cmp::max, cmp::min};
 use std::{collections::HashSet, fs::File};
 
 pub fn solve_puzzle_1() -> usize {
-    let mut points = parse_file();
-    for _cycle in 0..6 {
-        let mut new_points = HashSet::<Point>::new();
-        let (x_range, y_range, z_range) = get_bounds(&points);
+    solve("src/day_17.txt", 3)
+}
 
-        for x in (x_range.min - 1)..=(x_range.max + 1) {
-            for y in (y_range.min - 1)..=(y_range.max + 1) {
-                for z in (z_range.min - 1)..=(z_range.max + 1) {
-                    // println!("({}, {}, {})", x, y, z);
-                    let point = Point::new(x, y, z);
-                    let count = count_active_neighbors(&point, &points);
-                    if count == 3 || (count == 2 && points.contains(&point)) {
-                        // println!("{:?},  {:?}", point, count);
-                        new_points.insert(point);
-                    }
-                }
+pub fn solve_puzzle_2() -> usize {
+    solve("src/day_17.txt", 4)
+}
+
+fn solve(file: &str, dimensions: u32) -> usize {
+    let mut points = parse_file(file, dimensions);
+    for _cycle in 0..6 {
+        let mut new_points = HashSet::<Vec<i32>>::new();
+        let bounds = get_bounds(&points, dimensions);
+
+        for point in bounds
+            .iter()
+            .map(|b| (b.min - 1)..=(b.max + 1))
+            .multi_cartesian_product()
+        {
+            let count = count_active_neighbors(&point, &points);
+            if count == 3 || (count == 2 && points.contains(&point)) {
+                new_points.insert(point);
             }
         }
 
         points = new_points;
-
-        // println!("X Range: {:?}", x_range);
-        // println!("Y Range: {:?}", y_range);
-        // println!("Z Range: {:?}", z_range);
+        // println!("Cycle {} has {} active points", _cycle, points.len());
     }
 
     return points.len();
 }
 
-pub fn solve_puzzle_2() -> i32 {
-    return 0;
-}
-
-fn get_bounds(points: &HashSet<Point>) -> (Range, Range, Range) {
-    let mut x_range = Range::empty();
-    let mut y_range = Range::empty();
-    let mut z_range = Range::empty();
+fn get_bounds(points: &HashSet<Vec<i32>>, dimensions: u32) -> Vec<Range> {
+    let mut bounds = vec![Range::empty(); dimensions as usize];
     for point in points {
-        x_range = expand_range(&x_range, point.x);
-        y_range = expand_range(&y_range, point.y);
-        z_range = expand_range(&z_range, point.z);
+        for d in 0..dimensions as usize {
+            bounds[d] = expand_range(bounds.get(d).unwrap(), point[d]);
+        }
     }
-    (x_range, y_range, z_range)
+    return bounds;
 }
 
 fn expand_range(range: &Range, value: i32) -> Range {
@@ -55,39 +52,26 @@ fn expand_range(range: &Range, value: i32) -> Range {
     }
 }
 
-fn count_active_neighbors(point: &Point, points: &HashSet<Point>) -> u32 {
+fn count_active_neighbors(point: &Vec<i32>, points: &HashSet<Vec<i32>>) -> u32 {
     let mut active_neightbors = 0;
-    for x in (point.x - 1)..=(point.x + 1) {
-        for y in (point.y - 1)..=(point.y + 1) {
-            for z in (point.z - 1)..=(point.z + 1) {
-                let neighbor = Point::new(x, y, z);
-                if &neighbor == point {
-                    // println!("{:?} = {:?}", neighbor, point);
-                    continue;
-                }
-                if points.contains(&neighbor) {
-                    // println!("{:?} contains {:?}", points, neighbor);
-                    active_neightbors += 1;
-                }
-            }
+    for neighbor in point
+        .iter()
+        .map(|d| (d - 1)..=(d + 1))
+        .multi_cartesian_product()
+    {
+        if &neighbor == point {
+            // println!("{:?} = {:?}", neighbor, point);
+            continue;
+        }
+        if points.contains(&neighbor) {
+            // println!("{:?} contains {:?}", points, neighbor);
+            active_neightbors += 1;
         }
     }
     return active_neightbors;
 }
 
-#[derive(Debug, Eq, Hash, PartialEq)]
-struct Point {
-    x: i32,
-    y: i32,
-    z: i32,
-}
-
-impl Point {
-    fn new(x: i32, y: i32, z: i32) -> Point {
-        Point { x, y, z }
-    }
-}
-
+#[derive(Clone)]
 struct Range {
     min: i32,
     max: i32,
@@ -102,11 +86,11 @@ impl Range {
     }
 }
 
-fn parse_file() -> HashSet<Point> {
-    let file = File::open("src/day_17.txt").unwrap();
+fn parse_file(path: &str, dimensions: u32) -> HashSet<Vec<i32>> {
+    let file = File::open(path).unwrap();
     let reader = BufReader::new(file);
 
-    let mut data = HashSet::<Point>::new();
+    let mut data = HashSet::<Vec<i32>>::new();
 
     for (y, line) in reader.lines().enumerate() {
         let line = line.unwrap();
@@ -116,8 +100,37 @@ fn parse_file() -> HashSet<Point> {
             .filter(|&(_, c)| c == '#')
             .map(|(x, _)| x)
         {
-            data.insert(Point::new(x as i32, y as i32, 0));
+            let mut point = vec![x as i32, y as i32];
+            for _ in 2..dimensions {
+                point.push(0);
+            }
+            data.insert(point);
         }
     }
     return data;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn example_3_dim() {
+        assert_eq!(112, solve("src/day_17_example.txt", 3));
+    }
+
+    #[test]
+    fn puzzle_1() {
+        assert_eq!(213, solve("src/day_17.txt", 3));
+    }
+
+    #[test]
+    fn example_4_dim() {
+        assert_eq!(848, solve("src/day_17_example.txt", 4));
+    }
+
+    #[test]
+    fn puzzle_2() {
+        assert_eq!(1624, solve("src/day_17.txt", 4));
+    }
 }
