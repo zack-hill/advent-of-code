@@ -1,12 +1,41 @@
-use std::{collections::HashMap, fs::File};
 use std::{
     collections::VecDeque,
     io::{BufRead, BufReader},
+};
+use std::{
+    collections::{HashMap, HashSet},
+    fs::File,
 };
 
 pub fn solve_puzzle_1() -> u64 {
     let tiles = parse_file();
     let tiles_grid = match_tiles(tiles);
+
+    // Prints tile numbers
+    // for row in tiles_grid.iter() {
+    //     println!("{:?}", row.iter().map(|t| t.number).collect::<Vec<u64>>());
+    // }
+
+    // println!("");
+
+    // Prints tile data
+    // for y in 0..tiles_grid.len() {
+    //     for i in 0..tiles_grid[y][0].data.len() {
+    //         let mut row = String::new();
+    //         for x in 0..tiles_grid[y].len() {
+    //             row.push_str(
+    //                 tiles_grid[y][x].data[i]
+    //                     .iter()
+    //                     .map(|&g| if g { '#' } else { '.' })
+    //                     .collect::<String>()
+    //                     .as_str(),
+    //             );
+    //             row.push(' ');
+    //         }
+    //         println!("{}", row);
+    //     }
+    //     println!("");
+    // }
 
     let first_row = tiles_grid.first().unwrap();
     let last_row = tiles_grid.last().unwrap();
@@ -18,9 +47,37 @@ pub fn solve_puzzle_1() -> u64 {
         * last_row.last().unwrap().number;
 }
 
-pub fn solve_puzzle_2() -> u64 {
+pub fn solve_puzzle_2() -> usize {
     let tiles = parse_file();
-    return 0;
+    let mut tiles_grid = match_tiles(tiles);
+
+    // Trim the borders of the tiles
+    for y in 0..tiles_grid.len() {
+        for x in 0..tiles_grid[y].len() {
+            tiles_grid[y][x].trim_border();
+        }
+    }
+
+    // Stitch tiles together into a single tile
+    let mut stitched_tile = Tile::from_tile_array(&tiles_grid);
+
+    let sea_monster_results: Vec<(u32, usize)> = get_tile_transformations()
+        .iter()
+        .map(|transformation| {
+            transformation(&mut stitched_tile);
+            detect_sea_monsters(&stitched_tile)
+        })
+        .collect();
+
+    let &(count, water_roughness) = sea_monster_results
+        .iter()
+        .max_by_key(|(count, _)| count)
+        .unwrap();
+
+    println!("Found {} sea monsters", count);
+    println!("Water Roughness: {}", water_roughness);
+
+    return water_roughness;
 }
 
 #[derive(Clone, Eq, Hash, PartialEq)]
@@ -104,6 +161,35 @@ impl Tile {
         }
         self.data = rotated;
     }
+
+    fn trim_border(&mut self) {
+        // Skip the first and last row
+        self.data = self.data[1..(self.data.len() - 1)]
+            .iter()
+            // Skip the first and last value of each row
+            .map(|row| row[1..(row.len() - 1)].iter().cloned().collect())
+            .collect();
+    }
+
+    fn from_tile_array(tile_grid: &Vec<Vec<Tile>>) -> Tile {
+        let mut stitched_data = Vec::<Vec<bool>>::new();
+        // Iterate through all rows of tiles in the tile grid
+        for y in 0..tile_grid.len() {
+            // Iterate through all rows of data in the current row
+            for i in 0..tile_grid[0][0].data.len() {
+                // Concatenate the data from each tile in the row
+                let mut row = Vec::<bool>::new();
+                for x in 0..tile_grid[0].len() {
+                    row.extend(tile_grid[y][x].data[i].iter());
+                }
+                stitched_data.push(row);
+            }
+        }
+        Tile {
+            number: 0,
+            data: stitched_data,
+        }
+    }
 }
 
 fn match_tiles(tiles: Vec<Tile>) -> Vec<Vec<Tile>> {
@@ -117,16 +203,14 @@ fn match_tiles(tiles: Vec<Tile>) -> Vec<Vec<Tile>> {
     let directions: HashMap<Side, (i32, i32)> = vec![
         (Side::Right, (1, 0)),
         (Side::Left, (-1, 0)),
-        (Side::Top, (0, 1)),
-        (Side::Bottom, (0, -1)),
+        (Side::Top, (0, -1)),
+        (Side::Bottom, (0, 1)),
     ]
     .into_iter()
     .collect();
 
     // Initialize all tiles as unsolved
-    for tile in tiles.values() {
-        unsolved_tiles.push_back(tile.number);
-    }
+    unsolved_tiles.extend(tiles.values().map(|t| t.number));
 
     // Iterate through the unsolved tiles and try to find a spot in the grid
     // where the sides match up. If a spot cannot be found, the tile is added
@@ -207,7 +291,21 @@ fn match_tiles(tiles: Vec<Tile>) -> Vec<Vec<Tile>> {
 /// the sides of the line match the given set of sides.
 /// Returns true if a matching orientation if found.
 fn fit_tile(tile: &mut Tile, sides: &Vec<(&Side, Vec<bool>)>) -> bool {
-    let mutations: Vec<fn(&mut Tile)> = vec![
+    for mutator in get_tile_transformations().iter() {
+        mutator(tile);
+        if check_tile(tile, sides) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/// Returns a list of transformations that if performed on a tile in order will bring
+/// the tile through all possible orientations.
+fn get_tile_transformations() -> Vec<fn(&mut Tile)> {
+    vec![
+        |_| {}, // An no-op transformation makes iteration cleaner
         |t| t.rotate_cw(),
         |t| t.rotate_cw(),
         |t| t.rotate_cw(),
@@ -223,15 +321,7 @@ fn fit_tile(tile: &mut Tile, sides: &Vec<(&Side, Vec<bool>)>) -> bool {
         |t| t.rotate_cw(),
         |t| t.rotate_cw(),
         |t| t.rotate_cw(),
-    ];
-    for mutator in mutations {
-        mutator(tile);
-        if check_tile(tile, sides) {
-            return true;
-        }
-    }
-
-    return false;
+    ]
 }
 
 /// Compares the sides of a tile against the given set of sides.
@@ -240,6 +330,57 @@ fn check_tile(tile: &Tile, sides: &Vec<(&Side, Vec<bool>)>) -> bool {
     sides
         .iter()
         .all(|(side, values)| &tile.get_side(side) == values)
+}
+
+fn detect_sea_monsters(tile: &Tile) -> (u32, usize) {
+    // The SEA MONSTER!
+    let sea_monster = vec![
+        "                  # ",
+        "#    ##    ##    ###",
+        " #  #  #  #  #  #   ",
+    ];
+
+    // Get a list of offsets relative to the top left of the sea monster string.
+    let offsets: Vec<(usize, usize)> = sea_monster
+        .iter()
+        .enumerate()
+        .flat_map(|(y, line)| {
+            line.chars()
+                .enumerate()
+                .filter(|(_, c)| *c == '#')
+                .map(|(x, _)| (x, y))
+                .collect::<Vec<(usize, usize)>>()
+        })
+        .collect();
+
+    // Move the window over the tile and check for SEA MONSTERS!
+    let mut sea_monster_count = 0;
+    let mut sea_monster_locations = HashSet::<(usize, usize)>::new();
+    let window_width = offsets.iter().map(|(x, _)| x).max().unwrap();
+    let window_height = offsets.iter().map(|(_, y)| y).max().unwrap();
+    let tile_width = tile.data[0].len();
+    let tile_height = tile.data.len();
+    for y in 0..(tile_height - window_height) {
+        for x in 0..(tile_width - window_width) {
+            let offset_locations: Vec<(usize, usize)> =
+                offsets.iter().map(|(ox, oy)| (x + ox, y + oy)).collect();
+            if offset_locations.iter().all(|&(x, y)| tile.data[y][x]) {
+                sea_monster_count += 1;
+                sea_monster_locations.extend(offset_locations);
+            }
+        }
+    }
+
+    // Calculate 'water roughness' by subtracting the number of cells where a sea monster was found
+    // from the total number of '#' cells in the source tile.
+    let water_roughness = tile
+        .data
+        .iter()
+        .map(|row| row.iter().filter(|&x| *x).count())
+        .sum::<usize>()
+        - sea_monster_locations.len();
+
+    (sea_monster_count, water_roughness)
 }
 
 fn parse_file() -> Vec<Tile> {
@@ -382,5 +523,160 @@ mod tests {
         tile.rotate_ccw();
 
         assert_eq!(expected, tile.data);
+    }
+
+    #[test]
+    fn trim_border() {
+        let mut tile = create_test_tile();
+
+        let expected = vec![vec![true, false], vec![false, false]];
+
+        tile.trim_border();
+
+        assert_eq!(expected, tile.data);
+    }
+
+    #[test]
+    fn from_tile_grid() {
+        let tiles = vec![
+            vec![
+                Tile {
+                    number: 0,
+                    data: vec![vec![false, false], vec![true, true]],
+                },
+                Tile {
+                    number: 1,
+                    data: vec![vec![true, true], vec![false, false]],
+                },
+            ],
+            vec![
+                Tile {
+                    number: 2,
+                    data: vec![vec![true, false], vec![true, true]],
+                },
+                Tile {
+                    number: 3,
+                    data: vec![vec![false, false], vec![true, true]],
+                },
+            ],
+        ];
+        let expected = vec![
+            vec![false, false, true, true],
+            vec![true, true, false, false],
+            vec![true, false, false, false],
+            vec![true, true, true, true],
+        ];
+
+        let stitched = Tile::from_tile_array(&tiles);
+
+        assert_eq!(expected, stitched.data);
+    }
+
+    #[test]
+    fn detect_sea_monsters_test() {
+        let data = vec![
+            vec![
+                false, true, true, true, true, false, false, false, true, true, true, true, true,
+                false, false, true, false, false, false, true, true, true, false, false,
+            ],
+            vec![
+                true, true, true, true, true, false, false, true, false, false, true, false, true,
+                false, true, true, true, true, false, false, true, false, true, false,
+            ],
+            vec![
+                false, true, false, true, false, false, false, true, false, true, true, true,
+                false, false, false, true, false, true, true, false, true, true, false, false,
+            ],
+            vec![
+                true, false, true, false, true, true, false, true, true, true, false, true, false,
+                true, true, false, true, true, false, true, true, true, true, true,
+            ],
+            vec![
+                false, false, true, true, false, true, true, true, false, true, true, true, true,
+                false, false, true, false, true, true, true, true, false, true, true,
+            ],
+            vec![
+                false, false, false, true, false, true, false, false, true, true, false, true,
+                true, false, false, false, true, false, false, true, false, false, true, true,
+            ],
+            vec![
+                true, false, true, true, false, true, false, false, true, false, true, false,
+                false, true, false, false, true, true, false, true, false, true, false, false,
+            ],
+            vec![
+                false, true, true, true, false, true, true, false, false, false, false, false,
+                true, false, false, false, true, true, true, false, true, false, false, false,
+            ],
+            vec![
+                true, false, true, true, true, true, false, true, false, true, false, false, false,
+                false, true, true, false, true, false, false, true, false, true, false,
+            ],
+            vec![
+                true, true, false, false, false, true, false, false, true, false, false, false,
+                false, true, false, false, true, false, false, false, true, true, true, true,
+            ],
+            vec![
+                false, false, true, false, true, true, false, false, false, true, true, true,
+                false, false, true, false, true, true, true, true, true, false, false, true,
+            ],
+            vec![
+                false, false, false, false, true, false, true, true, false, true, false, true,
+                true, true, true, true, false, false, false, false, true, false, false, false,
+            ],
+            vec![
+                false, false, true, true, false, true, true, false, true, true, true, false, false,
+                false, false, false, true, false, true, true, false, false, true, false,
+            ],
+            vec![
+                true, false, false, false, true, false, false, false, true, true, true, false,
+                false, true, true, true, true, false, false, false, false, true, true, false,
+            ],
+            vec![
+                false, true, false, true, true, false, false, false, true, false, true, true,
+                false, true, false, true, false, true, true, true, false, false, false, true,
+            ],
+            vec![
+                true, false, true, true, true, false, true, false, false, true, true, true, true,
+                false, false, false, true, true, false, false, true, false, false, false,
+            ],
+            vec![
+                true, false, true, true, true, false, false, false, true, false, true, true, false,
+                false, false, true, false, true, true, true, true, true, true, false,
+            ],
+            vec![
+                false, true, true, true, false, true, true, true, false, true, true, true, true,
+                true, true, true, false, false, true, true, true, true, true, false,
+            ],
+            vec![
+                false, false, true, true, false, true, false, false, true, false, false, true,
+                false, true, true, true, true, true, true, true, false, true, true, true,
+            ],
+            vec![
+                true, false, true, false, false, true, true, false, true, true, true, true, true,
+                true, true, true, false, false, true, false, false, true, true, false,
+            ],
+            vec![
+                true, false, true, true, true, true, true, false, false, true, false, true, false,
+                false, false, true, true, false, false, true, false, false, false, false,
+            ],
+            vec![
+                true, false, false, false, false, true, true, false, false, true, false, true,
+                true, true, true, true, true, true, true, true, false, false, true, true,
+            ],
+            vec![
+                true, false, false, false, true, false, false, false, false, false, true, false,
+                false, true, true, false, false, false, true, true, true, false, true, true,
+            ],
+            vec![
+                true, false, false, true, true, true, false, false, false, false, true, true,
+                false, true, false, false, false, true, true, false, true, true, false, true,
+            ],
+        ];
+        let tile = Tile { number: 0, data };
+
+        let (sea_monster_count, water_roughness) = detect_sea_monsters(&tile);
+
+        assert_eq!(2, sea_monster_count);
+        assert_eq!(273, water_roughness);
     }
 }
