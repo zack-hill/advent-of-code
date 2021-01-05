@@ -7,12 +7,26 @@ use std::io::{BufRead, BufReader};
 
 pub fn solve_puzzle_1() -> usize {
     let (rules, messages) = parse_file();
-    let rule = Regex::new(&format!("^{}$", &rules[&0])).unwrap();
+
+    let mut expanded_rules = HashMap::<u8, String>::new();
+    expand_rule(0, 0, &rules, &mut expanded_rules);
+
+    let rule = Regex::new(&format!("^{}$", &expanded_rules[&0])).unwrap();
     return messages.iter().filter(|m| rule.is_match(m)).count();
 }
-pub fn solve_puzzle_2() -> u64 {
-    let (rules, messages) = parse_file();
-    return 0;
+pub fn solve_puzzle_2() -> usize {
+    let (mut rules, messages) = parse_file();
+
+    // Replace rules, introducing recursive rules
+    rules.insert(8, "42 | 42 8".to_owned());
+    rules.insert(11, "42 31 | 42 11 31".to_owned());
+
+    let mut expanded_rules = HashMap::<u8, String>::new();
+
+    expand_rule(0, 0, &rules, &mut expanded_rules);
+
+    let rule = Regex::new(&format!("^{}$", &expanded_rules[&0])).unwrap();
+    return messages.iter().filter(|m| rule.is_match(m)).count();
 }
 
 fn parse_file() -> (HashMap<u8, String>, Vec<String>) {
@@ -38,20 +52,18 @@ fn parse_file() -> (HashMap<u8, String>, Vec<String>) {
         }
     }
 
-    let mut expanded_rules = HashMap::<u8, String>::new();
-
-    expand_rule(0, &rules, &mut expanded_rules);
-
-    return (expanded_rules, messages);
+    return (rules, messages);
 }
 
-fn expand_rule(num: u8, rules: &HashMap<u8, String>, expanded_rules: &mut HashMap<u8, String>) {
+fn expand_rule(
+    num: u8,
+    recursion_depth: u32,
+    rules: &HashMap<u8, String>,
+    expanded_rules: &mut HashMap<u8, String>,
+) {
     if expanded_rules.contains_key(&num) {
         return;
     }
-    // if let Some(expanded_rule) = expanded_rules.get(&num) {
-    //     return expanded_rule;
-    // }
     let rule = &rules[&num];
     if rule.starts_with('"') {
         let rule = rule.trim_matches('"').to_owned();
@@ -67,8 +79,17 @@ fn expand_rule(num: u8, rules: &HashMap<u8, String>, expanded_rules: &mut HashMa
                 expanded_rule.push('|');
             } else {
                 let child_rule_num: u8 = component.parse().unwrap();
-                expand_rule(child_rule_num, rules, expanded_rules);
-                expanded_rule.push_str(&expanded_rules[&child_rule_num]);
+                // Track recursive depth
+                let depth = if child_rule_num == num {
+                    recursion_depth + 1
+                } else {
+                    0
+                };
+                // Cut off recursive rules at 10 levels deep
+                if depth < 10 {
+                    expand_rule(child_rule_num, depth, rules, expanded_rules);
+                    expanded_rule.push_str(&expanded_rules[&child_rule_num]);
+                }
             }
         }
         if is_option {
