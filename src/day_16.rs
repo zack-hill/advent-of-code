@@ -8,13 +8,12 @@ pub fn solve_puzzle_1() -> u32 {
     let ticket_scanning_error_rate = data
         .nearby_tickets
         .iter()
-        .flat_map(|t| t)
+        .flatten()
         .filter(|&v| !validate_value(*v, &data))
         .sum();
     return ticket_scanning_error_rate;
 }
 
-// TODO: This is far from ideal. It takes about 65 seconds in release mode to calculate. This needs to be optimized.
 pub fn solve_puzzle_2() -> u64 {
     let data = parse_file();
 
@@ -25,7 +24,7 @@ pub fn solve_puzzle_2() -> u64 {
         .filter(|t| validate_ticket(t, &data))
         .collect();
 
-    // Find a list of potential spots for each field
+    // Find a list of potential indices for each field
     let mut valid_field_map = HashMap::<&str, Vec<usize>>::new();
     for field in data.fields.iter() {
         let valid_positions = valid_field_map
@@ -39,58 +38,31 @@ pub fn solve_puzzle_2() -> u64 {
         }
     }
 
-    let mut unsolved_fields: Vec<(&str, usize)> =
-        data.fields.iter().map(|f| (f.name.as_str(), 0)).collect();
-    let mut solved_fields = Vec::<(&str, usize)>::new();
+    // Sort the fields in ascending order based on the number of possible positions for that field
+    let mut unsolved_fields: Vec<&str> = data.fields.iter().map(|f| f.name.as_str()).collect();
+    unsolved_fields.sort_by(|a, b| valid_field_map[a].len().cmp(&valid_field_map[b].len()));
 
-    let mut is_backtracking = false;
-    while !unsolved_fields.is_empty() {
-        let (field, mut index) = if is_backtracking {
-            solved_fields.pop().unwrap()
-        } else {
-            unsolved_fields.pop().unwrap()
-        };
-
-        if is_backtracking {
-            index += 1;
-        }
-
-        let possible_indices = &valid_field_map[field];
-
-        while index < possible_indices.len() {
-            let taken_field_indices: Vec<usize> = solved_fields
-                .iter()
-                .map(|&(f, i)| valid_field_map.get(f).unwrap()[i])
-                .collect();
-            let curr = &possible_indices[index];
-            if !taken_field_indices.contains(curr) {
-                break;
-            }
-            // println!("{:?} contains {}", taken_field_indices, curr);
-            index += 1;
-        }
-
-        if index < possible_indices.len() {
-            solved_fields.push((field, index));
-            is_backtracking = false;
-        } else {
-            unsolved_fields.push((field, 0));
-            is_backtracking = true;
-        }
-    }
+    // Find position for each field using process of elimination. Each field solved reduces the number
+    // of possible positions for another field to one. This cascades until all fields are solved.
     let mut field_position_map = HashMap::<&str, usize>::new();
-    for (field, index) in solved_fields {
-        field_position_map.insert(
-            field,
-            *valid_field_map.get(field).unwrap().get(index).unwrap(),
-        );
+    for field in unsolved_fields.iter() {
+        // Check the possible indices for the field
+        for possible_index in valid_field_map[field].iter() {
+            // If the current possible index is not already claimed, take it
+            if field_position_map.values().all(|v| v != possible_index) {
+                field_position_map.insert(field, *possible_index);
+            }
+        }
     }
+
+    // Calculate the product of each of the departure fields for our ticket
     let result: u64 = field_position_map
         .keys()
         .filter(|k| k.starts_with("departure"))
-        .map(|k| field_position_map.get(k).unwrap())
-        .map(|i| data.our_ticket[*i as usize] as u64)
+        .map(|k| field_position_map[k])
+        .map(|i| data.our_ticket[i as usize] as u64)
         .product();
+
     return result;
 }
 
@@ -127,8 +99,6 @@ struct FileData {
     our_ticket: Vec<u32>,
     nearby_tickets: Vec<Vec<u32>>,
 }
-
-struct BacktrackingNode {}
 
 fn parse_file() -> FileData {
     let file = File::open("src/day_16.txt").unwrap();
