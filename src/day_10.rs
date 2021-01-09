@@ -2,16 +2,12 @@ use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-pub fn solve_puzzle_1() -> u64 {
-    let mut values = parse_file();
-    sort_and_cap(&mut values);
+pub fn solve_part_1(values: &Vec<u64>) -> u64 {
     let counts = get_counts(values.windows(2).map(|w| w[1] - w[0]));
     return counts[&1u64] * counts[&3u64];
 }
 
-pub fn solve_puzzle_2() -> u64 {
-    let mut values = parse_file();
-    sort_and_cap(&mut values);
+pub fn solve_part_2(values: &Vec<u64>) -> u64 {
     return count_paths(&values);
 }
 
@@ -56,12 +52,13 @@ fn sort_and_cap(values: &mut Vec<u64>) {
     values.push(adapter_value); // Add a value representing the adapter jolts
 }
 
-fn parse_file() -> Vec<u64> {
+pub fn parse_input() -> Vec<u64> {
     let file = File::open("src/day_10.txt").unwrap();
     let reader = BufReader::new(file);
-    let values: Vec<u64> = reader
+    let mut values = reader
         .lines()
         .map(|x| x.unwrap().parse().unwrap())
         .collect();
+    sort_and_cap(&mut values);
     return values;
 }

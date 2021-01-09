@@ -1,12 +1,12 @@
-extern crate regex;
-
 use regex::Regex;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-pub fn solve_puzzle_1() -> usize {
-    let (parent_map, _) = parse_file();
+type BagMap = HashMap<String, Vec<(usize, String)>>;
+
+pub fn solve_part_1(input: &(BagMap, BagMap)) -> usize {
+    let (parent_map, _) = input;
 
     let mut upstream_bags = HashSet::<String>::new();
     let mut queue = Vec::<String>::new();
@@ -24,12 +24,12 @@ pub fn solve_puzzle_1() -> usize {
     return upstream_bags.len();
 }
 
-pub fn solve_puzzle_2() -> usize {
-    let (_, child_map) = parse_file();
+pub fn solve_part_2(input: &(BagMap, BagMap)) -> usize {
+    let (_, child_map) = input;
     return count_children(&"shiny gold".to_string(), &child_map);
 }
 
-fn count_children(bag: &String, child_map: &HashMap<String, Vec<(usize, String)>>) -> usize {
+fn count_children(bag: &String, child_map: &BagMap) -> usize {
     return match child_map.get(bag) {
         Some(children) => children
             .iter()
@@ -43,18 +43,15 @@ fn count_children(bag: &String, child_map: &HashMap<String, Vec<(usize, String)>
     };
 }
 
-fn parse_file() -> (
-    HashMap<String, Vec<(usize, String)>>,
-    HashMap<String, Vec<(usize, String)>>,
-) {
+pub fn parse_input() -> (BagMap, BagMap) {
     let file = File::open("src/day_07.txt").unwrap();
     let reader = BufReader::new(file);
 
     let parent_bag_regex = Regex::new(r"(.+) bags ").unwrap();
     let child_bags_regex = Regex::new(r"(\d+) ([^.,]+) bag").unwrap();
 
-    let mut parent_map = HashMap::<String, Vec<(usize, String)>>::new();
-    let mut child_map = HashMap::<String, Vec<(usize, String)>>::new();
+    let mut parent_map = BagMap::new();
+    let mut child_map = BagMap::new();
 
     for line in reader.lines() {
         let line: &str = &line.unwrap();
@@ -77,12 +74,7 @@ fn parse_file() -> (
     return (parent_map, child_map);
 }
 
-fn insert(
-    key: String,
-    qty: usize,
-    value: String,
-    nodes: &mut HashMap<String, Vec<(usize, String)>>,
-) {
+fn insert(key: String, qty: usize, value: String, nodes: &mut BagMap) {
     match nodes.get_mut(&key) {
         Some(x) => x.push((qty, value)),
         None => {

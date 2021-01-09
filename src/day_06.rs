@@ -4,8 +4,10 @@ use std::collections::HashSet;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-pub fn solve_puzzle_1() -> usize {
-    return read_groups_from_file()
+type Group = Vec<HashSet<String>>;
+
+pub fn solve_part_1(groups: &Vec<Group>) -> usize {
+    return groups
         .iter()
         .map(|g| {
             g.iter().fold(HashSet::<String>::new(), |acc, x| {
@@ -16,9 +18,9 @@ pub fn solve_puzzle_1() -> usize {
         .sum();
 }
 
-pub fn solve_puzzle_2() -> usize {
+pub fn solve_part_2(groups: &Vec<Group>) -> usize {
     let all_letters: HashSet<String> = ('a'..='z').map(|c| String::from(c)).collect();
-    return read_groups_from_file()
+    return groups
         .iter()
         .map(|g| {
             g.iter().fold(all_letters.clone(), |acc, x| {
@@ -29,13 +31,13 @@ pub fn solve_puzzle_2() -> usize {
         .sum();
 }
 
-fn read_groups_from_file() -> Vec<Vec<HashSet<String>>> {
+pub fn parse_input() -> Vec<Group> {
     let file = File::open("src/day_06.txt").unwrap();
     let reader = BufReader::new(file);
 
-    let mut groups = Vec::<Vec<HashSet<String>>>::new();
+    let mut groups = Vec::<Group>::new();
 
-    let mut current_group = Vec::<HashSet<String>>::new();
+    let mut current_group = Group::new();
 
     for line in reader.lines() {
         let line: &str = &line.unwrap();

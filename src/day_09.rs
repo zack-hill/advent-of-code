@@ -1,14 +1,12 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-pub fn solve_puzzle_1() -> u64 {
-    let values = parse_file();
+pub fn solve_part_1(values: &Vec<u64>) -> u64 {
     let preamble = 25;
     return find_invalid_number(&values, preamble);
 }
 
-pub fn solve_puzzle_2() -> u64 {
-    let values = parse_file();
+pub fn solve_part_2(values: &Vec<u64>) -> u64 {
     let preamble = 25;
     let target_number = find_invalid_number(&values, preamble);
     let mut longest_chain = Vec::<u64>::new();
@@ -61,10 +59,10 @@ fn validate(values: &Vec<u64>, index: usize, preamble: usize) -> bool {
     return false;
 }
 
-fn parse_file() -> Vec<u64> {
+pub fn parse_input() -> Vec<u64> {
     let file = File::open("src/day_09.txt").unwrap();
     let reader = BufReader::new(file);
-    let values: Vec<u64> = reader
+    let values = reader
         .lines()
         .map(|x| x.unwrap().parse().unwrap())
         .collect();

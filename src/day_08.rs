@@ -3,8 +3,7 @@ use std::collections::HashSet;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-pub fn solve_puzzle_1() -> isize {
-    let instructions = parse_file();
+pub fn solve_part_1(instructions: &Vec<(String, isize)>) -> isize {
     let mut visited_lines = HashSet::<usize>::new();
     let mut line = 0;
     let mut acc = 0;
@@ -19,8 +18,7 @@ pub fn solve_puzzle_1() -> isize {
     }
 }
 
-pub fn solve_puzzle_2() -> isize {
-    let instructions = parse_file();
+pub fn solve_part_2(instructions: &Vec<(String, isize)>) -> isize {
     let mut visited_lines = HashSet::<usize>::new();
     let mut line = 0;
     let mut acc = 0;
@@ -76,7 +74,7 @@ fn perform_operation(operation: &str, argument: isize, line: &mut usize, acc: &m
     };
 }
 
-fn parse_file() -> Vec<(String, isize)> {
+pub fn parse_input() -> Vec<(String, isize)> {
     let file = File::open("src/day_08.txt").unwrap();
     let reader = BufReader::new(file);
     return reader

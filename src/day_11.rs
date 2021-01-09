@@ -1,32 +1,21 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-pub fn solve_puzzle_1() -> usize {
-    let mut grid = parse_file();
-    loop {
-        let new_grid = simulate(&grid, 4, 1);
-        if !is_changed(&new_grid, &grid) {
-            break;
-        }
-        grid = new_grid;
-    }
+type Grid = Vec<Vec<char>>;
+
+pub fn solve_part_1(grid: &Grid) -> usize {
+    let mut grid = grid.clone();
+    simulate_until_stable(&mut grid, 4, 1);
     return count_occupied_seats(&grid);
 }
 
-pub fn solve_puzzle_2() -> usize {
-    let mut grid = parse_file();
-    loop {
-        let new_grid = simulate(&grid, 5, usize::MAX);
-        // print(&grid);
-        if !is_changed(&new_grid, &grid) {
-            break;
-        }
-        grid = new_grid;
-    }
+pub fn solve_part_2(grid: &Grid) -> usize {
+    let mut grid = grid.clone();
+    simulate_until_stable(&mut grid, 5, usize::MAX);
     return count_occupied_seats(&grid);
 }
 
-fn print(grid: &Vec<Vec<char>>) {
+fn print(grid: &Grid) {
     for row in grid {
         let s: String = row.into_iter().clone().collect();
         println!("{}", s);
@@ -34,21 +23,22 @@ fn print(grid: &Vec<Vec<char>>) {
     println!("");
 }
 
-fn simulate(
-    starting_grid: &Vec<Vec<char>>,
-    min_seats_to_vacate: usize,
-    sight_distance: usize,
-) -> Vec<Vec<char>> {
-    let mut grid = starting_grid.clone();
+fn simulate_until_stable(grid: &mut Grid, min_seats_to_vacate: usize, sight_distance: usize) {
+    while simulate(grid, min_seats_to_vacate, sight_distance) {}
+}
+
+fn simulate(grid: &mut Grid, min_seats_to_vacate: usize, sight_distance: usize) -> bool {
+    let starting_grid = grid.clone();
+
+    let mut changed = false;
 
     for y in 0..grid.len() {
         for x in 0..grid[0].len() {
-            grid[y][x] = match starting_grid[y][x] {
+            match starting_grid[y][x] {
                 'L' => {
-                    if occupied_seats_in_sight_at_least(&starting_grid, x, y, 1, sight_distance) {
-                        'L'
-                    } else {
-                        '#'
+                    if !occupied_seats_in_sight_at_least(&starting_grid, x, y, 1, sight_distance) {
+                        changed = true;
+                        grid[y][x] = '#'
                     }
                 }
                 '#' => {
@@ -59,21 +49,20 @@ fn simulate(
                         min_seats_to_vacate,
                         sight_distance,
                     ) {
-                        'L'
-                    } else {
-                        '#'
+                        changed = true;
+                        grid[y][x] = 'L'
                     }
                 }
-                _ => starting_grid[y][x],
+                _ => {}
             };
         }
     }
 
-    return grid;
+    return changed;
 }
 
 fn occupied_seats_in_sight_at_least(
-    grid: &Vec<Vec<char>>,
+    grid: &Grid,
     x: usize,
     y: usize,
     min_occupied: usize,
@@ -104,7 +93,7 @@ fn occupied_seats_in_sight_at_least(
 }
 
 fn check_in_direction(
-    grid: &Vec<Vec<char>>,
+    grid: &Grid,
     x_start: usize,
     y_start: usize,
     x_step: isize,
@@ -137,7 +126,7 @@ fn check_in_direction(
     }
 }
 
-fn is_changed(grid_1: &Vec<Vec<char>>, grid_2: &Vec<Vec<char>>) -> bool {
+fn is_changed(grid_1: &Grid, grid_2: &Grid) -> bool {
     for y in 0..grid_1.len() {
         for x in 0..grid_1[0].len() {
             if grid_1[y][x] != grid_2[y][x] {
@@ -148,18 +137,18 @@ fn is_changed(grid_1: &Vec<Vec<char>>, grid_2: &Vec<Vec<char>>) -> bool {
     return false;
 }
 
-fn count_occupied_seats(grid: &Vec<Vec<char>>) -> usize {
-    return grid.iter().flatten().filter(|x| **x == '#').count();
+fn count_occupied_seats(grid: &Grid) -> usize {
+    return grid.iter().flatten().filter(|&x| x == &'#').count();
 }
 
-fn parse_file() -> Vec<Vec<char>> {
+pub fn parse_input() -> Grid {
     let file = File::open("src/day_11.txt").unwrap();
     let reader = BufReader::new(file);
-    let values: Vec<Vec<char>> = reader
+    let grid = reader
         .lines()
-        .map(|x| x.unwrap().chars().collect())
+        .map(|line| line.unwrap().chars().collect())
         .collect();
-    return values;
+    return grid;
 }
 
 #[cfg(test)]
