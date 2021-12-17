@@ -2,15 +2,18 @@
 
 extern crate nom;
 
-mod day_25;
+mod year_2021;
+use year_2021::day_01;
 
 use std::time::Instant;
 
 fn main() {
     let start = Instant::now();
 
-    println!("Puzzle 1: {}", day_25::solve_puzzle_1());
-    println!("Puzzle 2: {}", day_25::solve_puzzle_2());
+    let input = day_01::parse_input();
+
+    println!("Part 1: {}", day_01::solve_part_1(&input));
+    println!("Part 2: {}", day_01::solve_part_2(&input));
 
     println!(
         "Time Elapsed: {} ms",
