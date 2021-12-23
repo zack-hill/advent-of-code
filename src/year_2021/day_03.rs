@@ -7,7 +7,7 @@ pub fn solve_part_1(input: &Vec<BitVec>) -> u32 {
 
     // Find most common bit for each position
     let gamma_rate_bits = (0..bit_count)
-        .map(|i| input.iter().filter(|x| x[i] == true).count() > (input.len() / 2))
+        .map(|i| get_most_common_bit(input, i))
         .collect::<BitVec>();
     let gamma_rate = to_u32(&gamma_rate_bits);
     //println!("Gamma Rate Bits: {:?}", gamma_rate_bits);
@@ -22,8 +22,53 @@ pub fn solve_part_1(input: &Vec<BitVec>) -> u32 {
     return gamma_rate as u32 * epsilon_rate as u32;
 }
 
-pub fn solve_part_2(input: &Vec<BitVec>) -> usize {
-    return 0;
+pub fn solve_part_2(input: &Vec<BitVec>) -> u32 {
+    let bit_count = input[0].len();
+    
+    let mut working_set = input.clone();
+    // println!("Working Set: {:?}", working_set);
+    for position in 0..bit_count {
+        // println!("Position: {}", position);
+        let most_common_bit = get_most_common_bit(&working_set, position);
+        // println!("Most Common Bit: {}", most_common_bit);
+        working_set.drain_filter(|x| x[position] != most_common_bit);
+        if working_set.len() == 1{
+            break;
+        }
+        // println!("New Working Set: {:?}", working_set);
+    }
+    let oxygen_rating_bits = working_set.get(0).unwrap();
+    let oxygen_rating = to_u32(oxygen_rating_bits);
+    // println!("Oxygen Rating Bits: {:?}", oxygen_rating_bits);
+    println!("Oxygen Rating: {:?}", oxygen_rating);
+
+    let mut working_set = input.clone();
+    // println!("Working Set: {:?}", working_set);
+    for position in 0..bit_count {
+        // println!("Position: {}", position);
+        let most_common_bit = get_least_common_bit(&working_set, position);
+        // println!("Least Common Bit: {}", most_common_bit);
+
+        working_set.drain_filter(|x| x[position] != most_common_bit);
+        if working_set.len() == 1{
+            break;
+        }
+        // println!("New Working Set: {:?}", working_set);
+    }
+    let c02_rating_bits = working_set.get(0).unwrap();
+    let c02_rating = to_u32(c02_rating_bits);
+    // println!("C02 Rating Bits: {:?}", c02_rating_bits);
+    println!("C02 Rating: {:?}", c02_rating);
+
+    return oxygen_rating * c02_rating;
+}
+
+fn get_most_common_bit(input: &Vec<BitVec>, position: usize) -> bool {
+    (input.iter().filter(|x| x[position] == true).count() as f32) >= (input.len() as f32 / 2f32)
+}
+
+fn get_least_common_bit(input: &Vec<BitVec>, position: usize) -> bool {
+    (input.iter().filter(|x| x[position] == true).count() as f32) < input.len() as f32 / 2f32
 }
 
 fn to_u32(bits: &BitVec) -> u32 {

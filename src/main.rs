@@ -1,4 +1,4 @@
-#![feature(iterator_fold_self)]
+#![feature(drain_filter)]
 
 extern crate nom;
 
