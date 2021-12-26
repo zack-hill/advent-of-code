@@ -10,10 +10,10 @@ use std::time::Instant;
 fn main() {
     let start = Instant::now();
 
-    let input = day_07::parse_input();
+    let input = day_08::parse_input();
 
-    println!("Part 1: {}", day_07::solve_part_1(&input));
-    println!("Part 2: {}", day_07::solve_part_2(&input));
+    println!("Part 1: {}", day_08::solve_part_1(&input));
+    println!("Part 2: {}", day_08::solve_part_2(&input));
 
     println!(
         "Time Elapsed: {} ms",
