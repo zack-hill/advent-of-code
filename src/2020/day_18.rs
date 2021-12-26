@@ -1,3 +1,4 @@
+use crate::solver::AoCSolver;
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -13,27 +14,38 @@ use std::io::{BufRead, BufReader};
 use std::str::FromStr;
 
 // nom code from https://github.com/Geal/nom/blob/master/tests/arithmetic.rs
-
 // TODO: The two solutions no not share any code. It would be nice if the factor/parens functions could be shared at least.
 
-pub fn solve_puzzle_1() -> i64 {
-    let file = File::open("src/day_18.txt").unwrap();
-    let reader = BufReader::new(file);
-    let sum = reader
-        .lines()
-        .map(|l| p1_expr(l.unwrap().as_str()).unwrap().1)
-        .sum();
-    return sum;
+pub struct Solver {
+    lines: Vec<String>,
 }
 
-pub fn solve_puzzle_2() -> i64 {
-    let file = File::open("src/day_18.txt").unwrap();
-    let reader = BufReader::new(file);
-    let sum = reader
-        .lines()
-        .map(|l| p2_expr(l.unwrap().as_str()).unwrap().1)
-        .sum();
-    return sum;
+impl Solver {
+    pub fn create() -> Self {
+        let file = File::open("src/2020/day_18.txt").unwrap();
+        let reader = BufReader::new(file);
+        return Solver {
+            lines: reader.lines().map(|l| l.unwrap()).collect(),
+        };
+    }
+}
+
+impl AoCSolver for Solver {
+    fn solve_part_1(&self) -> String {
+        self.lines
+            .iter()
+            .map(|l| p1_expr(l.as_str()).unwrap().1)
+            .sum::<i64>()
+            .to_string()
+    }
+
+    fn solve_part_2(&self) -> String {
+        self.lines
+            .iter()
+            .map(|l| p2_expr(l.as_str()).unwrap().1)
+            .sum::<i64>()
+            .to_string()
+    }
 }
 
 fn p1_expr(i: &str) -> IResult<&str, i64> {

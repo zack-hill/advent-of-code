@@ -1,30 +1,46 @@
+use crate::solver::AoCSolver;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-pub fn solve_puzzle_1() -> i64 {
-    let (departure_time, bus_lines) = parse_file();
-    for time in departure_time.. {
-        for (_, bus_line) in bus_lines.iter() {
-            if time % bus_line == 0 {
-                return (time - departure_time) * bus_line;
-            }
-        }
-    }
-    return 0;
+pub struct Solver {
+    departure_time: i64,
+    bus_lines: Vec<(i64, i64)>,
 }
 
-pub fn solve_puzzle_2() -> i64 {
-    let (_, bus_lines) = parse_file();
+impl Solver {
+    pub fn create() -> Self {
+        let (departure_time, bus_lines) = parse_input();
+        Solver {
+            departure_time,
+            bus_lines,
+        }
+    }
+}
 
-    // Use Chinese Remainder Theorem
-    let prod: i64 = bus_lines.iter().map(|(_, b)| b).product();
-    let result = bus_lines
-        .iter()
-        .map(|&(a, b)| -a * (prod / b) * inv_mod(prod / b, b))
-        .sum::<i64>()
-        .rem_euclid(prod);
+impl AoCSolver for Solver {
+    fn solve_part_1(&self) -> String {
+        for time in self.departure_time.. {
+            for (_, bus_line) in self.bus_lines.iter() {
+                if time % bus_line == 0 {
+                    return ((time - self.departure_time) * bus_line).to_string();
+                }
+            }
+        }
+        panic!("No solution found")
+    }
 
-    return result;
+    fn solve_part_2(&self) -> String {
+        // Use Chinese Remainder Theorem
+        let prod: i64 = self.bus_lines.iter().map(|(_, b)| b).product();
+        let result = self
+            .bus_lines
+            .iter()
+            .map(|&(a, b)| -a * (prod / b) * inv_mod(prod / b, b))
+            .sum::<i64>()
+            .rem_euclid(prod);
+
+        return result.to_string();
+    }
 }
 
 fn inv_mod(x: i64, p: i64) -> i64 {
@@ -32,8 +48,8 @@ fn inv_mod(x: i64, p: i64) -> i64 {
     (0..p - 2).fold(1, |o, _| (o * x) % p)
 }
 
-fn parse_file() -> (i64, Vec<(i64, i64)>) {
-    let file = File::open("src/day_13.txt").unwrap();
+fn parse_input() -> (i64, Vec<(i64, i64)>) {
+    let file = File::open("src/2020/day_13.txt").unwrap();
     let mut reader = BufReader::new(file);
 
     let mut departure_time = String::new();

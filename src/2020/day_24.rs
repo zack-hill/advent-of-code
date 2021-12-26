@@ -1,21 +1,34 @@
+use crate::solver::AoCSolver;
 use nom::{branch::alt, bytes::complete::tag, combinator::map_res, multi::many1, IResult};
 use std::{collections::HashSet, fs::File, io::BufRead, io::BufReader, str::FromStr};
 use Direction::*;
 
-pub fn solve_puzzle_1() -> usize {
-    let direction_sets = parse_data();
-    let tiles = flip_tiles_using_directions(&direction_sets);
-    return tiles.len();
+pub struct Solver {
+    direction_sets: Vec<Vec<Direction>>,
 }
 
-pub fn solve_puzzle_2() -> usize {
-    let direction_sets = parse_data();
-    let mut tiles = flip_tiles_using_directions(&direction_sets);
-
-    for _ in 0..100 {
-        tiles = flip_tiles_using_rules(&tiles);
+impl Solver {
+    pub fn create() -> Self {
+        Solver {
+            direction_sets: parse_input(),
+        }
     }
-    return tiles.len();
+}
+
+impl AoCSolver for Solver {
+    fn solve_part_1(&self) -> String {
+        let tiles = flip_tiles_using_directions(&self.direction_sets);
+        return tiles.len().to_string();
+    }
+
+    fn solve_part_2(&self) -> String {
+        let mut tiles = flip_tiles_using_directions(&self.direction_sets);
+
+        for _ in 0..100 {
+            tiles = flip_tiles_using_rules(&tiles);
+        }
+        return tiles.len().to_string();
+    }
 }
 
 fn flip_tiles_using_directions(direction_sets: &Vec<Vec<Direction>>) -> HashSet<(i32, i32)> {
@@ -121,8 +134,8 @@ fn parse_directions(i: &str) -> IResult<&str, Vec<Direction>> {
     ))(i)
 }
 
-fn parse_data() -> Vec<Vec<Direction>> {
-    let file = File::open("src/day_24.txt").unwrap();
+fn parse_input() -> Vec<Vec<Direction>> {
+    let file = File::open("src/2020/day_24.txt").unwrap();
     let reader = BufReader::new(file);
 
     reader

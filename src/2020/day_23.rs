@@ -1,29 +1,43 @@
-pub fn solve_puzzle_1() -> String {
-    let cups = vec![2, 8, 4, 5, 7, 3, 9, 6, 1];
-    let mut linked_list = convert_to_linked_list(&cups);
-    move_cups(100, cups[0], &mut linked_list);
-    let cups = convert_from_linked_list(&linked_list);
+use crate::solver::AoCSolver;
 
-    return cups
-        .iter()
-        .skip(1)
-        .map(|c| c.to_string())
-        .collect::<Vec<String>>()
-        .concat();
+pub struct Solver {
+    cups: Vec<usize>,
 }
 
-pub fn solve_puzzle_2() -> usize {
-    let mut cups = vec![2, 8, 4, 5, 7, 3, 9, 6, 1];
+impl Solver {
+    pub fn create() -> Self {
+        Solver {
+            cups: vec![2, 8, 4, 5, 7, 3, 9, 6, 1],
+        }
+    }
+}
 
-    // Add remaining cups up through one million
-    let max = *cups.iter().max().unwrap();
-    cups.extend(max + 1..=1_000_000);
+impl AoCSolver for Solver {
+    fn solve_part_1(&self) -> String {
+        let mut linked_list = convert_to_linked_list(&self.cups);
+        move_cups(100, self.cups[0], &mut linked_list);
+        let cups = convert_from_linked_list(&linked_list);
 
-    let mut linked_list = convert_to_linked_list(&cups);
-    move_cups(10_000_000, cups[0], &mut linked_list);
-    let cups = convert_from_linked_list(&linked_list);
+        return cups
+            .iter()
+            .skip(1)
+            .map(|c| c.to_string())
+            .collect::<Vec<String>>()
+            .concat();
+    }
 
-    return cups[1] * cups[2];
+    fn solve_part_2(&self) -> String {
+        let mut cups = self.cups.clone();
+        // Add remaining cups up through one million
+        let max = *cups.iter().max().unwrap();
+        cups.extend(max + 1..=1_000_000);
+
+        let mut linked_list = convert_to_linked_list(&cups);
+        move_cups(10_000_000, cups[0], &mut linked_list);
+        let cups = convert_from_linked_list(&linked_list);
+
+        return (cups[1] * cups[2]).to_string();
+    }
 }
 
 fn move_cups(move_count: u32, start: usize, linked_list: &mut Vec<usize>) {
@@ -118,15 +132,5 @@ mod tests {
         let actual = super::convert_from_linked_list(&linked_list);
 
         assert_eq!(expected, actual);
-    }
-
-    #[test]
-    fn solve_puzzle_1() {
-        assert_eq!("26354798", super::solve_puzzle_1());
-    }
-
-    #[test]
-    fn solve_puzzle_2() {
-        assert_eq!(166298218695, super::solve_puzzle_2());
     }
 }

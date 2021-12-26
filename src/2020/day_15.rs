@@ -1,13 +1,26 @@
+use crate::solver::AoCSolver;
 use std::collections::HashMap;
 
-pub fn solve_puzzle_1() -> u32 {
-    let numbers = get_numbers();
-    return get_number_at_turn(2020, &numbers);
+pub struct Solver {
+    numbers: Vec<u32>,
 }
 
-pub fn solve_puzzle_2() -> u32 {
-    let numbers = get_numbers();
-    return get_number_at_turn(30000000, &numbers);
+impl Solver {
+    pub fn create() -> Self {
+        Solver {
+            numbers: vec![10, 16, 6, 0, 1, 17],
+        }
+    }
+}
+
+impl AoCSolver for Solver {
+    fn solve_part_1(&self) -> String {
+        return get_number_at_turn(2020, &self.numbers).to_string();
+    }
+
+    fn solve_part_2(&self) -> String {
+        return get_number_at_turn(30000000, &self.numbers).to_string();
+    }
 }
 
 fn get_number_at_turn(target_turn: u32, numbers: &Vec<u32>) -> u32 {
@@ -48,8 +61,4 @@ fn get_number_at_turn(target_turn: u32, numbers: &Vec<u32>) -> u32 {
 
         turn += 1;
     }
-}
-
-fn get_numbers() -> Vec<u32> {
-    return vec![10, 16, 6, 0, 1, 17];
 }

@@ -1,3 +1,4 @@
+use crate::solver::AoCSolver;
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -13,30 +14,43 @@ use std::{
     iter::FromIterator,
 };
 
-pub fn solve_puzzle_1() -> usize {
-    let foods = parse_foods();
-    let allergen_ingredients = find_allergen_ingredients(&foods);
-    let allergen_ingredients: HashSet<String> = allergen_ingredients
-        .into_iter()
-        .map(|(_, ingredient)| ingredient)
-        .collect();
-    let safe_count = foods
-        .iter()
-        .flat_map(|f| &f.ingredients)
-        .filter(|i| !allergen_ingredients.contains(*i))
-        .count();
-    return safe_count;
+pub struct Solver {
+    foods: Vec<Food>,
 }
 
-pub fn solve_puzzle_2() -> String {
-    let foods = parse_foods();
-    let mut allergen_ingredients = find_allergen_ingredients(&foods);
-    allergen_ingredients.sort_by_key(|(allergen, _)| allergen.to_owned());
-    let canonical_dangerous_ingredients: Vec<String> = allergen_ingredients
-        .iter()
-        .map(|(_, ingredient)| ingredient.to_owned())
-        .collect();
-    return canonical_dangerous_ingredients.join(",");
+impl Solver {
+    pub fn create() -> Self {
+        Solver {
+            foods: parse_input(),
+        }
+    }
+}
+
+impl AoCSolver for Solver {
+    fn solve_part_1(&self) -> String {
+        let allergen_ingredients = find_allergen_ingredients(&self.foods);
+        let allergen_ingredients: HashSet<String> = allergen_ingredients
+            .into_iter()
+            .map(|(_, ingredient)| ingredient)
+            .collect();
+        let safe_count = self
+            .foods
+            .iter()
+            .flat_map(|f| &f.ingredients)
+            .filter(|i| !allergen_ingredients.contains(*i))
+            .count();
+        return safe_count.to_string();
+    }
+
+    fn solve_part_2(&self) -> String {
+        let mut allergen_ingredients = find_allergen_ingredients(&self.foods);
+        allergen_ingredients.sort_by_key(|(allergen, _)| allergen.to_owned());
+        let canonical_dangerous_ingredients: Vec<String> = allergen_ingredients
+            .iter()
+            .map(|(_, ingredient)| ingredient.to_owned())
+            .collect();
+        return canonical_dangerous_ingredients.join(",");
+    }
 }
 
 fn find_allergen_ingredients(foods: &Vec<Food>) -> Vec<(String, String)> {
@@ -65,7 +79,7 @@ fn find_allergen_ingredients(foods: &Vec<Food>) -> Vec<(String, String)> {
             );
         }
     }
-    
+
     // Loop through the allergens checking for any with a single possible ingredient. Identified ingredients
     // are removed from other allergens. This process eventually reduces the number of possible ingredients
     // for a each allergen down to one.
@@ -88,7 +102,12 @@ fn find_allergen_ingredients(foods: &Vec<Food>) -> Vec<(String, String)> {
     // Return pairs of allergen and their matching ingredient.
     return possible_ingredients_map
         .iter()
-        .map(|(allergen, ingredients)| (allergen.to_string(), ingredients.iter().next().unwrap().to_owned()))
+        .map(|(allergen, ingredients)| {
+            (
+                allergen.to_string(),
+                ingredients.iter().next().unwrap().to_owned(),
+            )
+        })
         .collect();
 }
 
@@ -97,8 +116,8 @@ struct Food {
     allergens: HashSet<String>,
 }
 
-fn parse_foods() -> Vec<Food> {
-    let file = File::open("src/day_21.txt").unwrap();
+fn parse_input() -> Vec<Food> {
+    let file = File::open("src/2020/day_21.txt").unwrap();
     let reader = BufReader::new(file);
     reader
         .lines()
@@ -152,23 +171,20 @@ mod tests {
 
     #[test]
     fn parse_food_works() {
-        let expected_ingredients: HashSet<String> = vec!["nmjbg", "qbm", "vhgtl", "mpbb"].into_iter().map(|a| a.to_string()).collect();
-        let expected_allergens: HashSet<String >= vec!["shellfish", "peanuts"].into_iter().map(|a| a.to_string()).collect();
+        let expected_ingredients: HashSet<String> = vec!["nmjbg", "qbm", "vhgtl", "mpbb"]
+            .into_iter()
+            .map(|a| a.to_string())
+            .collect();
+        let expected_allergens: HashSet<String> = vec!["shellfish", "peanuts"]
+            .into_iter()
+            .map(|a| a.to_string())
+            .collect();
 
-        let (text, food) = parse_food("nmjbg qbm vhgtl mpbb (contains shellfish, peanuts)").unwrap();
+        let (text, food) =
+            parse_food("nmjbg qbm vhgtl mpbb (contains shellfish, peanuts)").unwrap();
 
         assert_eq!("", text);
         assert_eq!(expected_ingredients, food.ingredients);
         assert_eq!(expected_allergens, food.allergens);
-    }
-
-    #[test]
-    fn solve_puzzle_1() {
-        assert_eq!(1958, super::solve_puzzle_1());
-    }
-
-    #[test]
-    fn solve_puzzle_2() {
-        assert_eq!("xxscc,mjmqst,gzxnc,vvqj,trnnvn,gbcjqbm,dllbjr,nckqzsg", super::solve_puzzle_2());
     }
 }

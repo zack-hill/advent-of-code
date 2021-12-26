@@ -1,4 +1,17 @@
-use std::{collections::HashSet, fs::File, io::BufRead, io::BufReader};
+use crate::solver::AoCSolver;
+use std::{fs::File, io::BufRead, io::BufReader};
+
+pub struct Solver {
+    line_segments: Vec<LineSegment>,
+}
+
+impl Solver {
+    pub fn create() -> Self {
+        Solver {
+            line_segments: parse_input(),
+        }
+    }
+}
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Point {
@@ -60,63 +73,68 @@ impl LineSegment {
     }
 }
 
-pub fn solve_part_1(line_segments: &Vec<LineSegment>) -> usize {
-    let non_diagonal_lines: Vec<&LineSegment> = line_segments
-        .iter()
-        .filter(|l| l.is_horizontal() || l.is_vertical())
-        .collect();
+impl AoCSolver for Solver {
+    fn solve_part_1(&self) -> String {
+        let non_diagonal_lines: Vec<&LineSegment> = self
+            .line_segments
+            .iter()
+            .filter(|l| l.is_horizontal() || l.is_vertical())
+            .collect();
 
-    let max_x = std::cmp::max(
-        non_diagonal_lines.iter().map(|l| l.start.x).max().unwrap(),
-        non_diagonal_lines.iter().map(|l| l.end.x).max().unwrap(),
-    );
-    let max_y = std::cmp::max(
-        non_diagonal_lines.iter().map(|l| l.start.y).max().unwrap(),
-        non_diagonal_lines.iter().map(|l| l.end.y).max().unwrap(),
-    );
+        let max_x = std::cmp::max(
+            non_diagonal_lines.iter().map(|l| l.start.x).max().unwrap(),
+            non_diagonal_lines.iter().map(|l| l.end.x).max().unwrap(),
+        );
+        let max_y = std::cmp::max(
+            non_diagonal_lines.iter().map(|l| l.start.y).max().unwrap(),
+            non_diagonal_lines.iter().map(|l| l.end.y).max().unwrap(),
+        );
 
-    let mut grid = vec![vec![0usize; max_x + 1]; max_y + 1];
+        let mut grid = vec![vec![0usize; max_x + 1]; max_y + 1];
 
-    for line in non_diagonal_lines {
-        for point in line.get_points() {
-            grid[point.y][point.x] += 1;
+        for line in non_diagonal_lines {
+            for point in line.get_points() {
+                grid[point.y][point.x] += 1;
+            }
         }
+
+        return grid
+            .iter()
+            .flat_map(|r| r.iter())
+            .filter(|&&p| p >= 2)
+            .count()
+            .to_string();
     }
 
-    return grid
-        .iter()
-        .flat_map(|r| r.iter())
-        .filter(|&&p| p >= 2)
-        .count();
-}
+    fn solve_part_2(&self) -> String {
+        let max_x = std::cmp::max(
+            self.line_segments.iter().map(|l| l.start.x).max().unwrap(),
+            self.line_segments.iter().map(|l| l.end.x).max().unwrap(),
+        );
+        let max_y = std::cmp::max(
+            self.line_segments.iter().map(|l| l.start.y).max().unwrap(),
+            self.line_segments.iter().map(|l| l.end.y).max().unwrap(),
+        );
 
-pub fn solve_part_2(line_segments: &Vec<LineSegment>) -> usize {
-    let max_x = std::cmp::max(
-        line_segments.iter().map(|l| l.start.x).max().unwrap(),
-        line_segments.iter().map(|l| l.end.x).max().unwrap(),
-    );
-    let max_y = std::cmp::max(
-        line_segments.iter().map(|l| l.start.y).max().unwrap(),
-        line_segments.iter().map(|l| l.end.y).max().unwrap(),
-    );
+        let mut grid = vec![vec![0usize; max_x + 1]; max_y + 1];
 
-    let mut grid = vec![vec![0usize; max_x + 1]; max_y + 1];
-
-    for line in line_segments {
-        for point in line.get_points() {
-            grid[point.y][point.x] += 1;
+        for line in self.line_segments.iter() {
+            for point in line.get_points() {
+                grid[point.y][point.x] += 1;
+            }
         }
-    }
 
-    return grid
-        .iter()
-        .flat_map(|r| r.iter())
-        .filter(|&&p| p >= 2)
-        .count();
+        return grid
+            .iter()
+            .flat_map(|r| r.iter())
+            .filter(|&&p| p >= 2)
+            .count()
+            .to_string();
+    }
 }
 
 pub fn parse_input() -> Vec<LineSegment> {
-    let file = File::open("src/year_2021/day_05.txt").unwrap();
+    let file = File::open("src/2021/day_05.txt").unwrap();
     let reader = BufReader::new(file);
 
     let mut line_segments = vec![];

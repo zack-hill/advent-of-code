@@ -1,54 +1,59 @@
+use crate::solver::AoCSolver;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-pub fn solve_puzzle_1() -> usize {
-    let mut grid = parse_file();
-    loop {
-        let new_grid = simulate(&grid, 4, 1);
-        if !is_changed(&new_grid, &grid) {
-            break;
+type Grid = Vec<Vec<char>>;
+
+pub struct Solver {
+    grid: Grid,
+}
+
+impl Solver {
+    pub fn create() -> Self {
+        Solver {
+            grid: parse_input(),
         }
-        grid = new_grid;
     }
-    return count_occupied_seats(&grid);
 }
 
-pub fn solve_puzzle_2() -> usize {
-    let mut grid = parse_file();
-    loop {
-        let new_grid = simulate(&grid, 5, usize::MAX);
-        // print(&grid);
-        if !is_changed(&new_grid, &grid) {
-            break;
-        }
-        grid = new_grid;
+impl AoCSolver for Solver {
+    fn solve_part_1(&self) -> String {
+        let mut grid = self.grid.clone();
+        simulate_until_stable(&mut grid, 4, 1);
+        return count_occupied_seats(&grid).to_string();
     }
-    return count_occupied_seats(&grid);
+
+    fn solve_part_2(&self) -> String {
+        let mut grid = self.grid.clone();
+        simulate_until_stable(&mut grid, 5, usize::MAX);
+        return count_occupied_seats(&grid).to_string();
+    }
 }
 
-fn print(grid: &Vec<Vec<char>>) {
-    for row in grid {
-        let s: String = row.into_iter().clone().collect();
-        println!("{}", s);
-    }
-    println!("");
+// fn print(grid: &Grid) {
+//     for row in grid {
+//         let s: String = row.into_iter().clone().collect();
+//         println!("{}", s);
+//     }
+//     println!("");
+// }
+
+fn simulate_until_stable(grid: &mut Grid, min_seats_to_vacate: usize, sight_distance: usize) {
+    while simulate(grid, min_seats_to_vacate, sight_distance) {}
 }
 
-fn simulate(
-    starting_grid: &Vec<Vec<char>>,
-    min_seats_to_vacate: usize,
-    sight_distance: usize,
-) -> Vec<Vec<char>> {
-    let mut grid = starting_grid.clone();
+fn simulate(grid: &mut Grid, min_seats_to_vacate: usize, sight_distance: usize) -> bool {
+    let starting_grid = grid.clone();
+
+    let mut changed = false;
 
     for y in 0..grid.len() {
         for x in 0..grid[0].len() {
-            grid[y][x] = match starting_grid[y][x] {
+            match starting_grid[y][x] {
                 'L' => {
-                    if occupied_seats_in_sight_at_least(&starting_grid, x, y, 1, sight_distance) {
-                        'L'
-                    } else {
-                        '#'
+                    if !occupied_seats_in_sight_at_least(&starting_grid, x, y, 1, sight_distance) {
+                        changed = true;
+                        grid[y][x] = '#'
                     }
                 }
                 '#' => {
@@ -59,21 +64,20 @@ fn simulate(
                         min_seats_to_vacate,
                         sight_distance,
                     ) {
-                        'L'
-                    } else {
-                        '#'
+                        changed = true;
+                        grid[y][x] = 'L'
                     }
                 }
-                _ => starting_grid[y][x],
+                _ => {}
             };
         }
     }
 
-    return grid;
+    return changed;
 }
 
 fn occupied_seats_in_sight_at_least(
-    grid: &Vec<Vec<char>>,
+    grid: &Grid,
     x: usize,
     y: usize,
     min_occupied: usize,
@@ -104,7 +108,7 @@ fn occupied_seats_in_sight_at_least(
 }
 
 fn check_in_direction(
-    grid: &Vec<Vec<char>>,
+    grid: &Grid,
     x_start: usize,
     y_start: usize,
     x_step: isize,
@@ -137,29 +141,18 @@ fn check_in_direction(
     }
 }
 
-fn is_changed(grid_1: &Vec<Vec<char>>, grid_2: &Vec<Vec<char>>) -> bool {
-    for y in 0..grid_1.len() {
-        for x in 0..grid_1[0].len() {
-            if grid_1[y][x] != grid_2[y][x] {
-                return true;
-            }
-        }
-    }
-    return false;
+fn count_occupied_seats(grid: &Grid) -> usize {
+    return grid.iter().flatten().filter(|&x| x == &'#').count();
 }
 
-fn count_occupied_seats(grid: &Vec<Vec<char>>) -> usize {
-    return grid.iter().flatten().filter(|x| **x == '#').count();
-}
-
-fn parse_file() -> Vec<Vec<char>> {
-    let file = File::open("src/day_11.txt").unwrap();
+pub fn parse_input() -> Grid {
+    let file = File::open("src/2020/day_11.txt").unwrap();
     let reader = BufReader::new(file);
-    let values: Vec<Vec<char>> = reader
+    let grid = reader
         .lines()
-        .map(|x| x.unwrap().chars().collect())
+        .map(|line| line.unwrap().chars().collect())
         .collect();
-    return values;
+    return grid;
 }
 
 #[cfg(test)]

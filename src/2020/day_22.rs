@@ -1,39 +1,56 @@
+use crate::solver::AoCSolver;
 use std::{
     collections::{HashSet, VecDeque},
     fs::File,
     io::{BufRead, BufReader},
 };
 
-pub fn solve_puzzle_1() -> u32 {
-    let mut decks = parse_decks();
+type Deck = VecDeque<u32>;
 
-    while decks.iter().all(|deck| !deck.is_empty()) {
-        // Get the top card off each player's decks
-        let cards = draw_cards(&mut decks);
+pub struct Solver {
+    decks: Vec<Deck>,
+}
 
-        // Find the player with the highest card
-        let winner = get_winner_by_high_card(&cards);
+impl Solver {
+    pub fn create() -> Self {
+        Solver {
+            decks: parse_input(),
+        }
+    }
+}
 
-        // Add cards to winning player's deck, adding the winner's card first
-        decks[winner].push_back(cards[winner]);
-        decks[winner].push_back(cards[1 - winner]);
+impl AoCSolver for Solver {
+    fn solve_part_1(&self) -> String {
+        let mut decks = self.decks.clone();
+
+        while decks.iter().all(|deck| !deck.is_empty()) {
+            // Get the top card off each player's decks
+            let cards = draw_cards(&mut decks);
+
+            // Find the player with the highest card
+            let winner = get_winner_by_high_card(&cards);
+
+            // Add cards to winning player's deck, adding the winner's card first
+            decks[winner].push_back(cards[winner]);
+            decks[winner].push_back(cards[1 - winner]);
+        }
+
+        // Get deck of winning player
+        let winner = decks.iter().filter(|deck| !deck.is_empty()).next().unwrap();
+
+        // Score winning deck
+        return score_deck(&winner).to_string();
     }
 
-    // Get deck of winning player
-    let winner = decks.iter().filter(|deck| !deck.is_empty()).next().unwrap();
-
-    // Score winning deck
-    return score_deck(&winner);
+    fn solve_part_2(&self) -> String {
+        let mut decks = self.decks.clone();
+        let winner = play_recursive_combat(&mut decks);
+        return score_deck(&decks[winner]).to_string();
+    }
 }
 
-pub fn solve_puzzle_2() -> u32 {
-    let mut decks = parse_decks();
-    let winner = play_recursive_combat(&mut decks);
-    return score_deck(&decks[winner]);
-}
-
-fn play_recursive_combat(decks: &mut Vec<VecDeque<u32>>) -> usize {
-    let mut game_decks = HashSet::<Vec<VecDeque<u32>>>::new();
+fn play_recursive_combat(decks: &mut Vec<Deck>) -> usize {
+    let mut game_decks = HashSet::<Vec<Deck>>::new();
 
     while decks.iter().all(|deck| !deck.is_empty()) {
         // Player 1 wins if this round has already been played
@@ -71,7 +88,7 @@ fn play_recursive_combat(decks: &mut Vec<VecDeque<u32>>) -> usize {
     return if decks[0].is_empty() { 1 } else { 0 };
 }
 
-fn draw_cards(decks: &mut Vec<VecDeque<u32>>) -> Vec<u32> {
+fn draw_cards(decks: &mut Vec<Deck>) -> Vec<u32> {
     decks
         .iter_mut()
         .map(|deck| deck.pop_front().unwrap())
@@ -87,7 +104,7 @@ fn get_winner_by_high_card(cards: &Vec<u32>) -> usize {
     return winner;
 }
 
-fn score_deck(deck: &VecDeque<u32>) -> u32 {
+fn score_deck(deck: &Deck) -> u32 {
     deck.iter()
         .rev()
         .enumerate()
@@ -95,11 +112,11 @@ fn score_deck(deck: &VecDeque<u32>) -> u32 {
         .sum()
 }
 
-fn parse_decks() -> Vec<VecDeque<u32>> {
-    let file = File::open("src/day_22.txt").unwrap();
+fn parse_input() -> Vec<Deck> {
+    let file = File::open("src/2020/day_22.txt").unwrap();
     let reader = BufReader::new(file);
 
-    let mut decks = Vec::<VecDeque<u32>>::new();
+    let mut decks = Vec::<Deck>::new();
 
     for line in reader.lines() {
         let line = line.unwrap();
@@ -107,7 +124,7 @@ fn parse_decks() -> Vec<VecDeque<u32>> {
         if line == "" {
             continue;
         } else if line.starts_with("Player") {
-            decks.push(VecDeque::new());
+            decks.push(Deck::new());
         } else {
             decks.last_mut().unwrap().push_back(line.parse().unwrap());
         }

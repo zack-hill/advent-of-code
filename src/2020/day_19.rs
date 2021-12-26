@@ -1,36 +1,59 @@
 extern crate regex;
 
+use crate::solver::AoCSolver;
 use regex::Regex;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-pub fn solve_puzzle_1() -> usize {
-    let (rules, messages) = parse_file();
-
-    let mut expanded_rules = HashMap::<u8, String>::new();
-    expand_rule(0, 0, &rules, &mut expanded_rules);
-
-    let rule = Regex::new(&format!("^{}$", &expanded_rules[&0])).unwrap();
-    return messages.iter().filter(|m| rule.is_match(m)).count();
-}
-pub fn solve_puzzle_2() -> usize {
-    let (mut rules, messages) = parse_file();
-
-    // Replace rules, introducing recursive rules
-    rules.insert(8, "42 | 42 8".to_owned());
-    rules.insert(11, "42 31 | 42 11 31".to_owned());
-
-    let mut expanded_rules = HashMap::<u8, String>::new();
-
-    expand_rule(0, 0, &rules, &mut expanded_rules);
-
-    let rule = Regex::new(&format!("^{}$", &expanded_rules[&0])).unwrap();
-    return messages.iter().filter(|m| rule.is_match(m)).count();
+pub struct Solver {
+    rules: HashMap<u8, String>,
+    messages: Vec<String>,
 }
 
-fn parse_file() -> (HashMap<u8, String>, Vec<String>) {
-    let file = File::open("src/day_19.txt").unwrap();
+impl Solver {
+    pub fn create() -> Self {
+        let (rules, messages) = parse_input();
+        return Solver { rules, messages };
+    }
+}
+
+impl AoCSolver for Solver {
+    fn solve_part_1(&self) -> String {
+        let mut expanded_rules = HashMap::<u8, String>::new();
+        expand_rule(0, 0, &self.rules, &mut expanded_rules);
+
+        let rule = Regex::new(&format!("^{}$", &expanded_rules[&0])).unwrap();
+        return self
+            .messages
+            .iter()
+            .filter(|m| rule.is_match(m))
+            .count()
+            .to_string();
+    }
+
+    fn solve_part_2(&self) -> String {
+        // Replace rules, introducing recursive rules
+        let mut rules = self.rules.clone();
+        rules.insert(8, "42 | 42 8".to_owned());
+        rules.insert(11, "42 31 | 42 11 31".to_owned());
+
+        let mut expanded_rules = HashMap::<u8, String>::new();
+
+        expand_rule(0, 0, &rules, &mut expanded_rules);
+
+        let rule = Regex::new(&format!("^{}$", &expanded_rules[&0])).unwrap();
+        return self
+            .messages
+            .iter()
+            .filter(|m| rule.is_match(m))
+            .count()
+            .to_string();
+    }
+}
+
+fn parse_input() -> (HashMap<u8, String>, Vec<String>) {
+    let file = File::open("src/2020/day_19.txt").unwrap();
     let reader = BufReader::new(file);
 
     let mut rules = HashMap::<u8, String>::new();

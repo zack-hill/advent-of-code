@@ -1,12 +1,27 @@
-pub fn solve_puzzle_1() -> u64 {
-    let public_keys = vec![9093927, 11001876];
-    let loop_size = find_loop_size(public_keys[0]);
-    let encryption_key = loop_transform(public_keys[1], loop_size);
-    return encryption_key;
+use crate::solver::AoCSolver;
+
+pub struct Solver {
+    public_keys: Vec<u64>,
 }
 
-pub fn solve_puzzle_2() -> usize {
-    return 0;
+impl Solver {
+    pub fn create() -> Self {
+        Solver {
+            public_keys: vec![9093927, 11001876],
+        }
+    }
+}
+
+impl AoCSolver for Solver {
+    fn solve_part_1(&self) -> String {
+        let loop_size = find_loop_size(self.public_keys[0]);
+        let encryption_key = loop_transform(self.public_keys[1], loop_size);
+        return encryption_key.to_string();
+    }
+
+    fn solve_part_2(&self) -> String {
+        return 0.to_string();
+    }
 }
 
 fn find_loop_size(public_key: u64) -> u64 {

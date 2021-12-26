@@ -1,20 +1,47 @@
+use crate::solver::AoCSolver;
 use itertools::Itertools;
 use std::io::{BufRead, BufReader};
 use std::{cmp::max, cmp::min};
 use std::{collections::HashSet, fs::File};
 
-pub fn solve_puzzle_1() -> usize {
-    solve("src/day_17.txt", 3)
+type Point = Vec<i32>;
+
+pub struct Solver {
+    points: HashSet<Point>,
 }
 
-pub fn solve_puzzle_2() -> usize {
-    solve("src/day_17.txt", 4)
+impl Solver {
+    pub fn create() -> Self {
+        Solver {
+            points: parse_file(),
+        }
+    }
 }
 
-fn solve(file: &str, dimensions: u32) -> usize {
-    let mut points = parse_file(file, dimensions);
+impl AoCSolver for Solver {
+    fn solve_part_1(&self) -> String {
+        let points = self
+            .points
+            .iter()
+            .map(|point| vec![point[0], point[1], 0])
+            .collect();
+        solve(&points, 3).to_string()
+    }
+
+    fn solve_part_2(&self) -> String {
+        let points = self
+            .points
+            .iter()
+            .map(|point| vec![point[0], point[1], 0, 0])
+            .collect();
+        solve(&points, 4).to_string()
+    }
+}
+
+fn solve(points: &HashSet<Point>, dimensions: u32) -> usize {
+    let mut points = points.clone();
     for _cycle in 0..6 {
-        let mut new_points = HashSet::<Vec<i32>>::new();
+        let mut new_points = HashSet::<Point>::new();
         let bounds = get_bounds(&points, dimensions);
 
         for point in bounds
@@ -35,7 +62,7 @@ fn solve(file: &str, dimensions: u32) -> usize {
     return points.len();
 }
 
-fn get_bounds(points: &HashSet<Vec<i32>>, dimensions: u32) -> Vec<Range> {
+fn get_bounds(points: &HashSet<Point>, dimensions: u32) -> Vec<Range> {
     let mut bounds = vec![Range::empty(); dimensions as usize];
     for point in points {
         for d in 0..dimensions as usize {
@@ -52,7 +79,7 @@ fn expand_range(range: &Range, value: i32) -> Range {
     }
 }
 
-fn count_active_neighbors(point: &Vec<i32>, points: &HashSet<Vec<i32>>) -> u32 {
+fn count_active_neighbors(point: &Point, points: &HashSet<Point>) -> u32 {
     let mut active_neightbors = 0;
     for neighbor in point
         .iter()
@@ -86,11 +113,11 @@ impl Range {
     }
 }
 
-fn parse_file(path: &str, dimensions: u32) -> HashSet<Vec<i32>> {
-    let file = File::open(path).unwrap();
+fn parse_file() -> HashSet<Point> {
+    let file = File::open("src/2020/day_17.txt").unwrap();
     let reader = BufReader::new(file);
 
-    let mut data = HashSet::<Vec<i32>>::new();
+    let mut data = HashSet::<Point>::new();
 
     for (y, line) in reader.lines().enumerate() {
         let line = line.unwrap();
@@ -100,37 +127,8 @@ fn parse_file(path: &str, dimensions: u32) -> HashSet<Vec<i32>> {
             .filter(|&(_, c)| c == '#')
             .map(|(x, _)| x)
         {
-            let mut point = vec![x as i32, y as i32];
-            for _ in 2..dimensions {
-                point.push(0);
-            }
-            data.insert(point);
+            data.insert(vec![x as i32, y as i32]);
         }
     }
     return data;
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn example_3_dim() {
-        assert_eq!(112, solve("src/day_17_example.txt", 3));
-    }
-
-    #[test]
-    fn puzzle_1() {
-        assert_eq!(213, solve("src/day_17.txt", 3));
-    }
-
-    #[test]
-    fn example_4_dim() {
-        assert_eq!(848, solve("src/day_17_example.txt", 4));
-    }
-
-    #[test]
-    fn puzzle_2() {
-        assert_eq!(1624, solve("src/day_17.txt", 4));
-    }
 }

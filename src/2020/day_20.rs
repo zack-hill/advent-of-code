@@ -1,3 +1,4 @@
+use crate::solver::AoCSolver;
 use std::{
     collections::VecDeque,
     io::{BufRead, BufReader},
@@ -7,77 +8,92 @@ use std::{
     fs::File,
 };
 
-pub fn solve_puzzle_1() -> u64 {
-    let tiles = parse_file();
-    let tiles_grid = match_tiles(tiles);
-
-    // Prints tile numbers
-    // for row in tiles_grid.iter() {
-    //     println!("{:?}", row.iter().map(|t| t.number).collect::<Vec<u64>>());
-    // }
-
-    // println!("");
-
-    // Prints tile data
-    // for y in 0..tiles_grid.len() {
-    //     for i in 0..tiles_grid[y][0].data.len() {
-    //         let mut row = String::new();
-    //         for x in 0..tiles_grid[y].len() {
-    //             row.push_str(
-    //                 tiles_grid[y][x].data[i]
-    //                     .iter()
-    //                     .map(|&g| if g { '#' } else { '.' })
-    //                     .collect::<String>()
-    //                     .as_str(),
-    //             );
-    //             row.push(' ');
-    //         }
-    //         println!("{}", row);
-    //     }
-    //     println!("");
-    // }
-
-    let first_row = tiles_grid.first().unwrap();
-    let last_row = tiles_grid.last().unwrap();
-
-    // Return the product of the four corners.
-    return first_row.first().unwrap().number
-        * first_row.last().unwrap().number
-        * last_row.first().unwrap().number
-        * last_row.last().unwrap().number;
+pub struct Solver {
+    tiles: Vec<Tile>,
 }
 
-pub fn solve_puzzle_2() -> usize {
-    let tiles = parse_file();
-    let mut tiles_grid = match_tiles(tiles);
-
-    // Trim the borders of the tiles
-    for y in 0..tiles_grid.len() {
-        for x in 0..tiles_grid[y].len() {
-            tiles_grid[y][x].trim_border();
+impl Solver {
+    pub fn create() -> Self {
+        Solver {
+            tiles: parse_file(),
         }
     }
+}
 
-    // Stitch tiles together into a single tile
-    let mut stitched_tile = Tile::from_tile_array(&tiles_grid);
+impl AoCSolver for Solver {
+    fn solve_part_1(&self) -> String {
+        let mut tiles = self.tiles.clone();
+        let tiles_grid = match_tiles(&mut tiles);
 
-    let sea_monster_results: Vec<(u32, usize)> = get_tile_transformations()
-        .iter()
-        .map(|transformation| {
-            transformation(&mut stitched_tile);
-            detect_sea_monsters(&stitched_tile)
-        })
-        .collect();
+        // Prints tile numbers
+        // for row in tiles_grid.iter() {
+        //     println!("{:?}", row.iter().map(|t| t.number).collect::<Vec<u64>>());
+        // }
 
-    let &(count, water_roughness) = sea_monster_results
-        .iter()
-        .max_by_key(|(count, _)| count)
-        .unwrap();
+        // println!("");
 
-    println!("Found {} sea monsters", count);
-    println!("Water Roughness: {}", water_roughness);
+        // Prints tile data
+        // for y in 0..tiles_grid.len() {
+        //     for i in 0..tiles_grid[y][0].data.len() {
+        //         let mut row = String::new();
+        //         for x in 0..tiles_grid[y].len() {
+        //             row.push_str(
+        //                 tiles_grid[y][x].data[i]
+        //                     .iter()
+        //                     .map(|&g| if g { '#' } else { '.' })
+        //                     .collect::<String>()
+        //                     .as_str(),
+        //             );
+        //             row.push(' ');
+        //         }
+        //         println!("{}", row);
+        //     }
+        //     println!("");
+        // }
 
-    return water_roughness;
+        let first_row = tiles_grid.first().unwrap();
+        let last_row = tiles_grid.last().unwrap();
+
+        // Return the product of the four corners.
+        return (first_row.first().unwrap().number
+            * first_row.last().unwrap().number
+            * last_row.first().unwrap().number
+            * last_row.last().unwrap().number)
+            .to_string();
+    }
+
+    fn solve_part_2(&self) -> String {
+        let mut tiles = self.tiles.clone();
+        let mut tiles_grid = match_tiles(&mut tiles);
+
+        // Trim the borders of the tiles
+        for y in 0..tiles_grid.len() {
+            for x in 0..tiles_grid[y].len() {
+                tiles_grid[y][x].trim_border();
+            }
+        }
+
+        // Stitch tiles together into a single tile
+        let mut stitched_tile = Tile::from_tile_array(&tiles_grid);
+
+        let sea_monster_results: Vec<(u32, usize)> = get_tile_transformations()
+            .iter()
+            .map(|transformation| {
+                transformation(&mut stitched_tile);
+                detect_sea_monsters(&stitched_tile)
+            })
+            .collect();
+
+        let &(_, water_roughness) = sea_monster_results
+            .iter()
+            .max_by_key(|(count, _)| count)
+            .unwrap();
+
+        // println!("Found {} sea monsters", count);
+        // println!("Water Roughness: {}", water_roughness);
+
+        return water_roughness.to_string();
+    }
 }
 
 #[derive(Clone, Eq, Hash, PartialEq)]
@@ -192,7 +208,7 @@ impl Tile {
     }
 }
 
-fn match_tiles(tiles: Vec<Tile>) -> Vec<Vec<Tile>> {
+fn match_tiles(tiles: &mut Vec<Tile>) -> Vec<Vec<Tile>> {
     let mut tiles: HashMap<_, _> = tiles.into_iter().map(|tile| (tile.number, tile)).collect();
     // A queue is used here because a given tile might not have any matching
     // sides at a given step, but by cycling through each unsolved tile we can
@@ -384,7 +400,7 @@ fn detect_sea_monsters(tile: &Tile) -> (u32, usize) {
 }
 
 fn parse_file() -> Vec<Tile> {
-    let file = File::open("src/day_20.txt").unwrap();
+    let file = File::open("src/2020/day_20.txt").unwrap();
     let reader = BufReader::new(file);
 
     let mut tiles = Vec::<Tile>::new();

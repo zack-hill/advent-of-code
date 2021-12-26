@@ -1,30 +1,49 @@
-extern crate regex;
-
 use regex::Regex;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-pub fn solve_puzzle_1() -> usize {
-    return count_valid_passports(validate_passport_fields);
+use crate::solver::AoCSolver;
+
+type Passport = HashMap<String, String>;
+
+pub struct Solver {
+    passports: Vec<Passport>,
 }
 
-pub fn solve_puzzle_2() -> usize {
-    return count_valid_passports(validate_passport_fields_and_values);
+impl Solver {
+    pub fn create() -> Self {
+        Solver {
+            passports: parse_input(),
+        }
+    }
 }
 
-fn count_valid_passports(validate: fn(&HashMap<String, String>) -> bool) -> usize {
-    let passports = parse_file("src/day_04.txt");
-    return passports.iter().filter(|p| validate(p)).count();
+impl AoCSolver for Solver {
+    fn solve_part_1(&self) -> String {
+        self.passports
+            .iter()
+            .filter(|p| validate_passport_fields(p))
+            .count()
+            .to_string()
+    }
+
+    fn solve_part_2(&self) -> String {
+        self.passports
+            .iter()
+            .filter(|p| validate_passport_fields_and_values(p))
+            .count()
+            .to_string()
+    }
 }
 
-fn validate_passport_fields(passport: &HashMap<String, String>) -> bool {
+fn validate_passport_fields(passport: &Passport) -> bool {
     return ["byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid"]
         .iter()
         .all(|x| passport.contains_key(*x));
 }
 
-fn validate_passport_fields_and_values(passport: &HashMap<String, String>) -> bool {
+fn validate_passport_fields_and_values(passport: &Passport) -> bool {
     let validation_rules = [
         ("byr", validate_birth_year as fn(&str) -> bool),
         ("iyr", validate_issue_year),
@@ -67,7 +86,7 @@ fn validate_height(value: &str) -> bool {
     return match unit {
         "cm" => validate_number(height, 150, 193),
         "in" => validate_number(height, 59, 76),
-        _ => false
+        _ => false,
     };
 }
 
@@ -90,20 +109,20 @@ fn validate_number(value: &str, min: usize, max: usize) -> bool {
     };
 }
 
-fn parse_file(path: &str) -> Vec<HashMap<String, String>> {
-    let file = File::open(path).unwrap();
+pub fn parse_input() -> Vec<Passport> {
+    let file = File::open("src/2020/day_04.txt").unwrap();
     let reader = BufReader::new(file);
 
-    let mut passports = Vec::<HashMap<String, String>>::new();
+    let mut passports = Vec::<Passport>::new();
 
-    let mut current_passport = HashMap::new();
+    let mut current_passport = Passport::new();
 
     for line in reader.lines() {
         let line: &str = &line.unwrap();
 
         if line.len() == 0 {
             passports.push(current_passport);
-            current_passport = HashMap::new();
+            current_passport = Passport::new();
             continue;
         }
 

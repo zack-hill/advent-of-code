@@ -1,60 +1,73 @@
+use crate::solver::AoCSolver;
 use std;
 use std::collections::HashSet;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-pub fn solve_puzzle_1() -> isize {
-    let instructions = parse_file();
-    let mut visited_lines = HashSet::<usize>::new();
-    let mut line = 0;
-    let mut acc = 0;
-    loop {
-        let (operation, argument) = &instructions[line];
-        perform_operation(operation, *argument, &mut line, &mut acc);
-        if visited_lines.contains(&line) {
-            // We have hit a loop.
-            return acc;
+pub struct Solver {
+    instructions: Vec<(String, isize)>,
+}
+
+impl Solver {
+    pub fn create() -> Self {
+        Solver {
+            instructions: parse_input(),
         }
-        visited_lines.insert(line);
     }
 }
 
-pub fn solve_puzzle_2() -> isize {
-    let instructions = parse_file();
-    let mut visited_lines = HashSet::<usize>::new();
-    let mut line = 0;
-    let mut acc = 0;
-    let mut swapped_line = 0;
-    loop {
-        let (operation, argument) = &instructions[line];
-        let mut operation: &str = operation;
-
-        if line == swapped_line {
-            // Swap the operation
-            operation = match operation {
-                "nop" => "jmp",
-                "jmp" => "nop",
-                _ => operation,
-            };
+impl AoCSolver for Solver {
+    fn solve_part_1(&self) -> String {
+        let mut visited_lines = HashSet::<usize>::new();
+        let mut line = 0;
+        let mut acc = 0;
+        loop {
+            let (operation, argument) = &self.instructions[line];
+            perform_operation(operation, *argument, &mut line, &mut acc);
+            if visited_lines.contains(&line) {
+                // We have hit a loop.
+                return acc.to_string();
+            }
+            visited_lines.insert(line);
         }
+    }
 
-        perform_operation(operation, *argument, &mut line, &mut acc);
+    fn solve_part_2(&self) -> String {
+        let mut visited_lines = HashSet::<usize>::new();
+        let mut line = 0;
+        let mut acc = 0;
+        let mut swapped_line = 0;
+        loop {
+            let (operation, argument) = &self.instructions[line];
+            let mut operation: &str = operation;
 
-        if visited_lines.contains(&line) {
-            // An infinite loop was found, reset and start over with a new swapped line.
-            acc = 0;
-            line = 0;
-            visited_lines.clear();
-            // This should ideally increment to the next swappable line to skip
-            // unnecessary calculations.
-            swapped_line += 1;
-            continue;
-        } else if line == instructions.len() {
-            // The last line has executed meaning that the correct line was swapped.
-            return acc;
+            if line == swapped_line {
+                // Swap the operation
+                operation = match operation {
+                    "nop" => "jmp",
+                    "jmp" => "nop",
+                    _ => operation,
+                };
+            }
+
+            perform_operation(operation, *argument, &mut line, &mut acc);
+
+            if visited_lines.contains(&line) {
+                // An infinite loop was found, reset and start over with a new swapped line.
+                acc = 0;
+                line = 0;
+                visited_lines.clear();
+                // This should ideally increment to the next swappable line to skip
+                // unnecessary calculations.
+                swapped_line += 1;
+                continue;
+            } else if line == self.instructions.len() {
+                // The last line has executed meaning that the correct line was swapped.
+                return acc.to_string();
+            }
+
+            visited_lines.insert(line);
         }
-
-        visited_lines.insert(line);
     }
 }
 
@@ -76,8 +89,8 @@ fn perform_operation(operation: &str, argument: isize, line: &mut usize, acc: &m
     };
 }
 
-fn parse_file() -> Vec<(String, isize)> {
-    let file = File::open("src/day_08.txt").unwrap();
+pub fn parse_input() -> Vec<(String, isize)> {
+    let file = File::open("src/2020/day_08.txt").unwrap();
     let reader = BufReader::new(file);
     return reader
         .lines()

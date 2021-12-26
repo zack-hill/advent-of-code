@@ -1,6 +1,46 @@
+use crate::solver::AoCSolver;
+use itertools::Itertools;
 use std::{collections::HashMap, fs::File, io::BufRead, io::BufReader};
 
-use itertools::Itertools;
+pub struct Solver {
+    entries: Vec<Entry>,
+}
+
+impl Solver {
+    pub fn create() -> Self {
+        Solver {
+            entries: parse_input(),
+        }
+    }
+}
+
+impl AoCSolver for Solver {
+    fn solve_part_1(&self) -> String {
+        self.entries
+            .iter()
+            .map(|e| {
+                e.output_values
+                    .iter()
+                    .filter(|ov| ov.len() == 2 || ov.len() == 3 || ov.len() == 4 || ov.len() == 7)
+                    .count()
+            })
+            .sum::<usize>()
+            .to_string()
+    }
+
+    fn solve_part_2(&self) -> String {
+        self.entries
+            .iter()
+            .map(|entry| {
+                let key = find_key(entry).unwrap();
+                let output_value = calculate_output_value(entry, &key);
+                // println!("{:?}: {}", entry.output_values, output_value);
+                return output_value;
+            })
+            .sum::<u32>()
+            .to_string()
+    }
+}
 
 pub struct Entry {
     signal_patterns: Vec<String>,
@@ -8,30 +48,6 @@ pub struct Entry {
 }
 
 type Key = HashMap<char, char>;
-
-pub fn solve_part_1(entries: &Vec<Entry>) -> usize {
-    entries
-        .iter()
-        .map(|e| {
-            e.output_values
-                .iter()
-                .filter(|ov| ov.len() == 2 || ov.len() == 3 || ov.len() == 4 || ov.len() == 7)
-                .count()
-        })
-        .sum()
-}
-
-pub fn solve_part_2(entries: &Vec<Entry>) -> u32 {
-    entries
-        .iter()
-        .map(|entry| {
-            let key = find_key(entry).unwrap();
-            let output_value = calculate_output_value(entry, &key);
-            // println!("{:?}: {}", entry.output_values, output_value);
-            return output_value;
-        })
-        .sum()
-}
 
 fn find_key(entry: &Entry) -> Result<Key, &str> {
     for permutation in ('a'..='g').permutations(7) {
@@ -91,7 +107,7 @@ fn digits_to_number(digits: &Vec<u8>) -> u32 {
 }
 
 pub fn parse_input() -> Vec<Entry> {
-    let file = File::open("src/year_2021/day_08.txt").unwrap();
+    let file = File::open("src/2021/day_08.txt").unwrap();
     let reader = BufReader::new(file);
 
     let mut entries = vec![];
