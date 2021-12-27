@@ -13,11 +13,12 @@ mod y_2020;
 mod y_2021;
 
 fn main() {
-    for year in 2020..=2020 {
-        for day in 1..=25 {
-            solve(year, day);
-        }
-    }
+    solve(2021, 9);
+    // for year in 2021..=2021 {
+    //     for day in 1..=8 {
+    //         solve(year, day);
+    //     }
+    // }
 }
 
 fn solve(year: u32, day: u32) {
@@ -45,6 +46,8 @@ fn solve(year: u32, day: u32) {
     println!("    - Part 1: {} μs", part_1_time);
     println!("    - Part 2: {} μs", part_2_time);
     println!("    - Total: {} μs", total_time);
+
+    // println!("| {} | {} μs | {} μs | {} μs |", day, input_parse_time, part_1_time, part_2_time);
 }
 
 fn get_solver(year: u32, day: u32) -> Result<fn() -> Box<dyn AoCSolver>, String> {
@@ -89,7 +92,7 @@ fn get_solver(year: u32, day: u32) -> Result<fn() -> Box<dyn AoCSolver>, String>
             06 => Ok(|| Box::new(y_2021::day_06::Solver::create())),
             07 => Ok(|| Box::new(y_2021::day_07::Solver::create())),
             08 => Ok(|| Box::new(y_2021::day_08::Solver::create())),
-            // 09 => Ok(|| Box::new(y_2021::day_09::Solver::create())),
+            09 => Ok(|| Box::new(y_2021::day_09::Solver::create())),
             // 10 => Ok(|| Box::new(y_2021::day_10::Solver::create())),
             // 11 => Ok(|| Box::new(y_2021::day_11::Solver::create())),
             // 12 => Ok(|| Box::new(y_2021::day_12::Solver::create())),
