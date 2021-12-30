@@ -94,7 +94,7 @@ fn get_solver(year: u32, day: u32) -> Result<fn() -> Box<dyn AoCSolver>, String>
             08 => Ok(|| Box::new(y_2021::day_08::Solver::create())),
             09 => Ok(|| Box::new(y_2021::day_09::Solver::create())),
             10 => Ok(|| Box::new(y_2021::day_10::Solver::create())),
-            // 11 => Ok(|| Box::new(y_2021::day_11::Solver::create())),
+            11 => Ok(|| Box::new(y_2021::day_11::Solver::create())),
             // 12 => Ok(|| Box::new(y_2021::day_12::Solver::create())),
             // 13 => Ok(|| Box::new(y_2021::day_13::Solver::create())),
             // 14 => Ok(|| Box::new(y_2021::day_14::Solver::create())),
