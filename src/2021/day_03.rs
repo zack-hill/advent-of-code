@@ -45,7 +45,7 @@ impl AoCSolver for Solver {
             // println!("Position: {}", position);
             let most_common_bit = get_most_common_bit(&working_set, position);
             // println!("Most Common Bit: {}", most_common_bit);
-            working_set.drain_filter(|x| x[position] != most_common_bit);
+            working_set.extract_if(|x| x[position] != most_common_bit);
             if working_set.len() == 1 {
                 break;
             }
@@ -63,7 +63,7 @@ impl AoCSolver for Solver {
             let most_common_bit = get_least_common_bit(&working_set, position);
             // println!("Least Common Bit: {}", most_common_bit);
 
-            working_set.drain_filter(|x| x[position] != most_common_bit);
+            working_set.extract_if(|x| x[position] != most_common_bit);
             if working_set.len() == 1 {
                 break;
             }
