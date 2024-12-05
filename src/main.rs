@@ -11,9 +11,11 @@ use std::time::Instant;
 mod y_2020;
 #[path = "2021/mod.rs"]
 mod y_2021;
+#[path = "2024/mod.rs"]
+mod y_2024;
 
 fn main() {
-    solve(2021, 13);
+    solve(2024, 04);
     // for year in 2021..=2021 {
     //     for day in 1..=8 {
     //         solve(year, day);
@@ -109,6 +111,13 @@ fn get_solver(year: u32, day: u32) -> Result<fn() -> Box<dyn AoCSolver>, String>
             // 23 => Ok(|| Box::new(y_2021::day_23::Solver::create())),
             // 24 => Ok(|| Box::new(y_2021::day_24::Solver::create())),
             // 25 => Ok(|| Box::new(y_2021::day_25::Solver::create())),
+            _ => Err(format!(
+                "No solvers implemented for year {} day {}",
+                year, day
+            )),
+        },
+        2024 => match day {
+            04 => Ok(|| Box::new(y_2024::day_04::Solver::create())),
             _ => Err(format!(
                 "No solvers implemented for year {} day {}",
                 year, day
