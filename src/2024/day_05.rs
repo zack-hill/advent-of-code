@@ -1,7 +1,10 @@
 use std::{
+    collections::HashSet,
     fs::File,
     io::{BufRead, BufReader},
 };
+
+use itertools::Itertools;
 
 use crate::solver::AoCSolver;
 
@@ -39,7 +42,7 @@ impl AoCSolver for Solver {
             .updates
             .iter()
             .filter(|x| !check_is_sorted(x, &self.ordering_rules))
-            .map(|x| get_middle_page(&sort_pages(x, &self.ordering_rules)))
+            .map(|x| get_middle_page(&sort_pages2(x, &self.ordering_rules)))
             .sum();
         return sum.to_string();
     }
@@ -91,6 +94,55 @@ fn sort_pages(pages: &PageCollection, ordering_rules: &Vec<OrderingRule>) -> Pag
     }
 
     pages
+}
+
+fn sort_pages2(pages: &PageCollection, ordering_rules: &Vec<OrderingRule>) -> PageCollection {
+    let filtered: Vec<&OrderingRule> = ordering_rules
+        .iter()
+        .filter(|(left, right)| pages.contains(&left) && pages.contains(&right))
+        .collect();
+    let mut sorted = PageCollection::new();
+    let mut to_sort: HashSet<&usize> = pages.iter().collect();
+
+    for page in pages {
+        // println!("pages: {:?}", pages);
+        // println!("filtered {:?}", filtered);
+        let a: HashSet<&usize> = filtered
+            .iter()
+            .filter(|(left, right)| !sorted.contains(left))
+            .map(|(left, right)| right)
+            .unique()
+            .collect();
+        let diff = to_sort.difference(&a);
+        // println!("a: {:?}", a);
+        // println!("to_sort: {:?}", to_sort);
+        // println!("diff: {:?}", diff);
+        let b = *diff.exactly_one().unwrap();
+        // println!("b: {:?}", b);
+        // let b = to_sort
+        //     .iter()
+        //     .filter(|x| a.d(value))
+        //     .filter(|x| to_sort.contains(x))
+        //     .exactly_one()
+        //     .unwrap();
+        sorted.push(*b);
+        to_sort.remove(b);
+        // let _: Vec<&OrderingRule> = filtered.extract_if(|(left, right)| left == b).collect();
+
+        // .sorted()
+        // .group_by(|x| x)
+        // .into_iter()
+        // .filter(|(page, group)| group.count() == 0)
+        // .exactly_one()
+        // .unwrap()
+        // .0;
+        // sorted.push(**a);
+        // filtered.extract_if(|(left, right)| left == *a);
+        // println!("sorted: {:?}", sorted);
+        // println!("");
+    }
+
+    sorted
 }
 
 enum ParseMode {
