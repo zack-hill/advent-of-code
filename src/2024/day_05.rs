@@ -42,7 +42,7 @@ impl AoCSolver for Solver {
             .updates
             .iter()
             .filter(|x| !check_is_sorted(x, &self.ordering_rules))
-            .map(|x| get_middle_page(&sort_pages2(x, &self.ordering_rules)))
+            .map(|x| get_middle_page(&sort_pages(x, &self.ordering_rules)))
             .sum();
         return sum.to_string();
     }
@@ -97,7 +97,7 @@ fn sort_pages(pages: &PageCollection, ordering_rules: &Vec<OrderingRule>) -> Pag
 }
 
 fn sort_pages2(pages: &PageCollection, ordering_rules: &Vec<OrderingRule>) -> PageCollection {
-    let filtered: Vec<&OrderingRule> = ordering_rules
+    let mut filtered: Vec<&OrderingRule> = ordering_rules
         .iter()
         .filter(|(left, right)| pages.contains(&left) && pages.contains(&right))
         .collect();
@@ -107,6 +107,17 @@ fn sort_pages2(pages: &PageCollection, ordering_rules: &Vec<OrderingRule>) -> Pa
     for page in pages {
         // println!("pages: {:?}", pages);
         // println!("filtered {:?}", filtered);
+        let o = **to_sort
+            .iter()
+            .filter(|p| !filtered.iter().any(|(left, right)| **p == right))
+            .exactly_one()
+            .unwrap();
+        sorted.push(o);
+        to_sort.remove(&o);
+
+        let _: Vec<&OrderingRule> = filtered.extract_if(|(left, right)| left == &o).collect();
+        continue;
+
         let a: HashSet<&usize> = filtered
             .iter()
             .filter(|(left, right)| !sorted.contains(left))
