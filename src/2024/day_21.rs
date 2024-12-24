@@ -1,10 +1,8 @@
 use std::{
     fs::File,
     io::{BufRead, BufReader},
-    iter,
+    iter::{self},
 };
-
-use itertools::chain;
 
 use crate::solver::AoCSolver;
 
@@ -149,10 +147,10 @@ fn get_directions(
     let down_count = if dy < 0 { dy_abs } else { 0 };
     let up_count = if dy > 0 { dy_abs } else { 0 };
 
-    let crosses_gap = (left_count > 1 && gx < x1 && gx >= x2 && gy == y1)
-        || (right_count > 1 && gx > x1 && gx <= x2 && gy == y1)
-        || (down_count > 1 && gy < y1 && gy >= y2 && gx == x1)
-        || (up_count > 1 && gy > y1 && gy <= y2 && gx == x1);
+    let crosses_gap = (left_count >= 1 && gx < x1 && gx >= x2 && gy == y1)
+        || (right_count >= 1 && gx > x1 && gx <= x2 && gy == y1)
+        || (down_count >= 1 && gy < y1 && gy >= y2 && gx == x1)
+        || (up_count >= 1 && gy > y1 && gy <= y2 && gx == x1);
 
     if crosses_gap {
         return iter::repeat_n(DirectionalKeyPadOption::Right, right_count)
@@ -167,11 +165,8 @@ fn get_directions(
     }
 }
 
-fn expand(
-    start: &Position,
-    options: &Vec<DirectionalKeyPadOption>,
-) -> Vec<DirectionalKeyPadOption> {
-    let mut pos = *start;
+fn expand(options: &Vec<DirectionalKeyPadOption>) -> Vec<DirectionalKeyPadOption> {
+    let mut pos = (2, 1);
     let mut expanded_inputs: Vec<DirectionalKeyPadOption> = Vec::new();
     for option in options.iter() {
         let target = option.get_position();
@@ -252,7 +247,7 @@ fn find_required_inputs(code: &CodeInput, robot_count: usize) -> usize {
 
         let mut last_layer_inputs = first_directional_keypad_inputs;
         for i in 0..robot_count - 1 {
-            last_layer_inputs = expand(&(2, 1), &last_layer_inputs);
+            last_layer_inputs = expand(&last_layer_inputs);
             // println!("l{}_inputs: {:?}", i, last_layer_inputs);
             println!(
                 "Evaluated Layer {}. Input Length = {}",
@@ -311,7 +306,7 @@ impl AoCSolver for Solver {
     }
 
     fn solve_part_2(&self) -> String {
-        return "".to_string();
+        // return "".to_string();
         let mut sum: usize = 0;
         for code in self.codes.iter() {
             let complexity = find_required_inputs(code, 26);
@@ -356,4 +351,24 @@ fn parse_input() -> Vec<CodeInput> {
         })
         .collect();
     return lines;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn occupied_seats_none_found() {
+        let options = vec![
+            DirectionalKeyPadOption::Left,
+            DirectionalKeyPadOption::A,
+            DirectionalKeyPadOption::Left,
+            DirectionalKeyPadOption::A,
+            DirectionalKeyPadOption::Left,
+            DirectionalKeyPadOption::Left,
+            DirectionalKeyPadOption::A,
+        ];
+        let expanded = expand(&options);
+        println!("{:?}", expanded)
+    }
 }
