@@ -1,8 +1,11 @@
 use std::{
+    collections::HashMap,
     fs::File,
     io::{BufRead, BufReader},
     iter::{self},
 };
+
+use itertools::Itertools;
 
 use crate::solver::AoCSolver;
 
@@ -79,7 +82,7 @@ impl NumericKeyPadOption {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
 enum DirectionalKeyPadOption {
     Left,
     Down,
@@ -165,7 +168,7 @@ fn get_directions(
     }
 }
 
-fn expand(options: &Vec<DirectionalKeyPadOption>) -> Vec<DirectionalKeyPadOption> {
+fn expand(options: &[DirectionalKeyPadOption]) -> Vec<DirectionalKeyPadOption> {
     let mut pos = (2, 1);
     let mut expanded_inputs: Vec<DirectionalKeyPadOption> = Vec::new();
     for option in options.iter() {
@@ -178,6 +181,46 @@ fn expand(options: &Vec<DirectionalKeyPadOption>) -> Vec<DirectionalKeyPadOption
     }
     // println!("expanded: {:?}", expanded_inputs);
     return expanded_inputs;
+}
+
+fn pad(v: &[DirectionalKeyPadOption]) -> [DirectionalKeyPadOption; 5] {
+    let mut arr = [DirectionalKeyPadOption::A; 5];
+    for i in 0..v.len() {
+        arr[i] = v[i];
+    }
+    return arr;
+    // v.extend(iter::repeat_n(DirectionalKeyPadOption::A, 5 - v.len()));
+}
+
+fn dfs(
+    options: &[DirectionalKeyPadOption],
+    depth: usize,
+    max_depth: usize,
+    cache: &mut HashMap<([DirectionalKeyPadOption; 5], usize), usize>,
+) -> usize {
+    if depth == max_depth {
+        return options.len();
+    }
+    let mut sum = 0;
+    let groups: Vec<&[DirectionalKeyPadOption]> = options
+        .split_inclusive(|o| *o == DirectionalKeyPadOption::A)
+        .collect();
+    for group in groups {
+        let count: usize;
+
+        let cache_key = (pad(group), depth);
+        if let Some(cached) = cache.get(&cache_key) {
+            count = *cached;
+        } else {
+            let expanded = expand(group);
+            let result = dfs(&expanded, depth + 1, max_depth, cache);
+            count = result;
+            cache.insert(cache_key, count);
+        }
+
+        sum += count;
+    }
+    return sum;
 }
 
 fn offset((x, y): &Position, option: &DirectionalKeyPadOption) -> Position {
@@ -226,16 +269,18 @@ fn apply(
 }
 
 fn find_required_inputs(code: &CodeInput, robot_count: usize) -> usize {
-    println!("Code: {:?}", code);
+    // println!("Code: {:?}", code);
 
     let mut numeric_keypad_position: Position = (2, 0);
 
     // let mut human_inputs: Vec<DirectionalKeyPadOption> = Vec::new();
     let mut input_count = 0;
 
+    let mut cache = HashMap::new();
+
     for keypad_option in code.keypad_options.iter() {
         let numeric_keypad_target = keypad_option.get_position();
-        println!("Steps for {:?}", keypad_option);
+        // println!("Steps for {:?}", keypad_option);
         // println!("l0: {:?} -> {:?}", p0, t0);
 
         let mut first_directional_keypad_inputs: Vec<DirectionalKeyPadOption> =
@@ -245,17 +290,20 @@ fn find_required_inputs(code: &CodeInput, robot_count: usize) -> usize {
 
         numeric_keypad_position = numeric_keypad_target;
 
-        let mut last_layer_inputs = first_directional_keypad_inputs;
-        for i in 0..robot_count - 1 {
-            last_layer_inputs = expand(&last_layer_inputs);
-            // println!("l{}_inputs: {:?}", i, last_layer_inputs);
-            println!(
-                "Evaluated Layer {}. Input Length = {}",
-                i,
-                last_layer_inputs.len()
-            );
-        }
-        input_count += last_layer_inputs.len();
+        let count = dfs(&first_directional_keypad_inputs, 1, robot_count, &mut cache);
+        input_count += count;
+
+        // let mut last_layer_inputs = first_directional_keypad_inputs;
+        // for i in 0..robot_count - 1 {
+        //     last_layer_inputs = expand(&last_layer_inputs);
+        //     // println!("l{}_inputs: {:?}", i, last_layer_inputs);
+        //     println!(
+        //         "Evaluated Layer {}. Input Length = {}",
+        //         i,
+        //         last_layer_inputs.len()
+        //     );
+        // }
+        // input_count += last_layer_inputs.len();
         // human_inputs.extend(last_layer_inputs);
         // println!("l3_inputs: {:?}", l3_inputs);
     }
@@ -275,7 +323,7 @@ fn find_required_inputs(code: &CodeInput, robot_count: usize) -> usize {
     // let (_, c) = apply(&(2, 0), &b);
     // println!("output: {:?}", c);
 
-    println!("{} * {}", input_count, code.code_value);
+    // println!("{} * {}", input_count, code.code_value);
     return input_count * code.code_value;
     // return human_inputs;
 }
@@ -297,8 +345,8 @@ impl AoCSolver for Solver {
         for code in self.codes.iter() {
             let complexity = find_required_inputs(code, 3);
             // let complexity = calculate_complexity(code, &inputs);
-            println!("{}: {}", code.code_value, complexity);
-            println!("");
+            // println!("{}: {}", code.code_value, complexity);
+            // println!("");
             sum += complexity;
         }
 
@@ -313,7 +361,7 @@ impl AoCSolver for Solver {
             // let complexity = calculate_complexity(code, &inputs);
             // println!("complexity: {:?}", complexity);
             // println!("");
-            println!("{}: {}", code.code_value, complexity);
+            // println!("{}: {}", code.code_value, complexity);
             sum += complexity;
         }
 
@@ -355,6 +403,8 @@ fn parse_input() -> Vec<CodeInput> {
 
 #[cfg(test)]
 mod tests {
+    use std::convert::TryInto;
+
     use super::*;
 
     #[test]
@@ -364,11 +414,23 @@ mod tests {
             DirectionalKeyPadOption::A,
             DirectionalKeyPadOption::Left,
             DirectionalKeyPadOption::A,
+            DirectionalKeyPadOption::A,
             DirectionalKeyPadOption::Left,
             DirectionalKeyPadOption::Left,
             DirectionalKeyPadOption::A,
         ];
-        let expanded = expand(&options);
-        println!("{:?}", expanded)
+        let test: Vec<&[DirectionalKeyPadOption]> = options
+            .split_inclusive(|o| *o == DirectionalKeyPadOption::A)
+            .collect();
+        // let expanded = expand(&options);
+        println!("{:?}", test)
+    }
+
+    #[test]
+    fn vecs() {
+        let v: Vec<u8> = vec![1, 2, 3];
+        println!("{v:?}");
+        let a: [u8; 3] = v.try_into().unwrap();
+        println!("{a:?}");
     }
 }
