@@ -32,3 +32,11 @@ pub fn parse_input() -> Vec<String> {
     let lines = reader.lines().map(|line| line.unwrap()).collect();
     return lines;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test() {}
+}
