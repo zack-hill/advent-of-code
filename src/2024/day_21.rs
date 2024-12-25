@@ -5,8 +5,6 @@ use std::{
     iter::{self},
 };
 
-use itertools::Itertools;
-
 use crate::solver::AoCSolver;
 
 type Position = (usize, usize);
@@ -92,27 +90,6 @@ enum DirectionalKeyPadOption {
 }
 
 impl DirectionalKeyPadOption {
-    fn to_char(&self) -> char {
-        match self {
-            DirectionalKeyPadOption::Left => '<',
-            DirectionalKeyPadOption::Down => 'v',
-            DirectionalKeyPadOption::Up => '^',
-            DirectionalKeyPadOption::Right => '>',
-            DirectionalKeyPadOption::A => 'A',
-        }
-    }
-
-    fn from_char(char: char) -> Self {
-        match char {
-            '<' => DirectionalKeyPadOption::Left,
-            'v' => DirectionalKeyPadOption::Down,
-            '^' => DirectionalKeyPadOption::Up,
-            '>' => DirectionalKeyPadOption::Right,
-            'A' => DirectionalKeyPadOption::A,
-            _ => panic!("Invalid Input!"),
-        }
-    }
-
     fn press(position: Position) -> Option<DirectionalKeyPadOption> {
         match position {
             (0, 0) => Some(DirectionalKeyPadOption::Left),
@@ -183,20 +160,11 @@ fn expand(options: &[DirectionalKeyPadOption]) -> Vec<DirectionalKeyPadOption> {
     return expanded_inputs;
 }
 
-fn pad(v: &[DirectionalKeyPadOption]) -> [DirectionalKeyPadOption; 5] {
-    let mut arr = [DirectionalKeyPadOption::A; 5];
-    for i in 0..v.len() {
-        arr[i] = v[i];
-    }
-    return arr;
-    // v.extend(iter::repeat_n(DirectionalKeyPadOption::A, 5 - v.len()));
-}
-
 fn dfs(
     options: &[DirectionalKeyPadOption],
     depth: usize,
     max_depth: usize,
-    cache: &mut HashMap<([DirectionalKeyPadOption; 5], usize), usize>,
+    cache: &mut HashMap<(Vec<DirectionalKeyPadOption>, usize), usize>,
 ) -> usize {
     if depth == max_depth {
         return options.len();
@@ -208,7 +176,7 @@ fn dfs(
     for group in groups {
         let count: usize;
 
-        let cache_key = (pad(group), depth);
+        let cache_key = (group.to_vec(), depth);
         if let Some(cached) = cache.get(&cache_key) {
             count = *cached;
         } else {
@@ -354,7 +322,6 @@ impl AoCSolver for Solver {
     }
 
     fn solve_part_2(&self) -> String {
-        // return "".to_string();
         let mut sum: usize = 0;
         for code in self.codes.iter() {
             let complexity = find_required_inputs(code, 26);
