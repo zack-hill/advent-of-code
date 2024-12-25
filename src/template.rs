@@ -26,7 +26,7 @@ impl AoCSolver for Solver {
     }
 }
 
-pub fn parse_input() -> Vec<String> {
+fn parse_input() -> Vec<String> {
     let file = File::open("src/2020/day_01.txt").unwrap();
     let reader = BufReader::new(file);
     let lines = reader.lines().map(|line| line.unwrap()).collect();
