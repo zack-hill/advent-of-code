@@ -52,7 +52,7 @@ impl AoCSolver for Solver {
                 }
             } else {
                 // Remove any board that wins
-                boards.extract_if(|board| has_board_won(&board, &called_numbers));
+                let _ = boards.extract_if(|board| has_board_won(&board, &called_numbers));
             }
         }
 

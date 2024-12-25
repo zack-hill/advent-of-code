@@ -152,6 +152,7 @@ impl Tile {
         self.rotate(-90.0);
     }
 
+    #[cfg(test)]
     fn rotate_ccw(&mut self) {
         self.rotate(90.0);
     }

@@ -1,5 +1,6 @@
+use colored::Colorize;
+
 use crate::solver::AoCSolver;
-use colored::*;
 use std::{fs::File, io::BufRead, io::BufReader};
 
 const WIDTH: usize = 10;
@@ -100,6 +101,7 @@ fn try_flash_neighbor(grid: &mut Grid, position: (usize, usize)) -> u32 {
     return 0;
 }
 
+#[allow(dead_code)]
 pub fn print_grid(grid: &Grid) {
     for y in 1..=HEIGHT {
         for x in 1..=WIDTH {

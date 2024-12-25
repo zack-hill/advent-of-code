@@ -71,6 +71,7 @@ fn get_middle_page(pages: &PageCollection) -> usize {
     pages[pages.len() / 2]
 }
 
+#[cfg(test)]
 fn sort_pages_using_swap(
     pages: &PageCollection,
     ordering_rules: &Vec<OrderingRule>,
@@ -181,4 +182,25 @@ fn parse_ordering_rule(line: &str) -> OrderingRule {
 
 fn parse_update(line: &str) -> PageCollection {
     line.split(',').map(|x| x.parse().unwrap()).collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sort_pages_using_swap_works() {
+        let pages = vec![3, 1, 2, 5];
+        let ordering_rules = vec![(1, 2), (2, 3), (3, 4), (4, 5), (3, 5)];
+        let ordered_pages = sort_pages_using_swap(&pages, &ordering_rules);
+        assert_eq!(ordered_pages, vec![1, 2, 3, 5]);
+    }
+
+    #[test]
+    fn sort_pages_using_ordering_rule_elimination_works() {
+        let pages = vec![3, 1, 2, 5];
+        let ordering_rules = vec![(1, 2), (2, 3), (3, 4), (4, 5), (3, 5)];
+        let ordered_pages = sort_pages_using_ordering_rule_elimination(&pages, &ordering_rules);
+        assert_eq!(ordered_pages, vec![1, 2, 3, 5]);
+    }
 }

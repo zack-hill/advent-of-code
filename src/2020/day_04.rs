@@ -104,7 +104,7 @@ fn validate_passport_id(value: &str) -> bool {
 
 fn validate_number(value: &str, min: usize, max: usize) -> bool {
     return match value.parse::<usize>() {
-        Ok(expiration_year) => (expiration_year >= min && expiration_year <= max),
+        Ok(expiration_year) => expiration_year >= min && expiration_year <= max,
         Err(_) => false,
     };
 }
