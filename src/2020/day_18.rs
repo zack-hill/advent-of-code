@@ -51,14 +51,14 @@ impl AoCSolver for Solver {
 fn p1_expr(i: &str) -> IResult<&str, i64> {
     let (i, init) = p1_factor(i)?;
 
-    fold_many0(
+    return fold_many0(
         pair(alt((char('+'), char('*'))), p1_factor),
-        init,
+        || init,
         |acc, (op, val): (char, i64)| match op {
             '+' => acc + val,
             _ => acc * val,
         },
-    )(i)
+    )(i);
 }
 
 fn p1_factor(i: &str) -> IResult<&str, i64> {
@@ -75,21 +75,21 @@ fn p1_parens(i: &str) -> IResult<&str, i64> {
 fn p2_expr(i: &str) -> IResult<&str, i64> {
     let (i, init) = p2_term(i)?;
 
-    fold_many0(
+    return fold_many0(
         pair(char('*'), p2_term),
-        init,
+        || init,
         |acc, (_, val): (char, i64)| acc * val,
-    )(i)
+    )(i);
 }
 
 fn p2_term(i: &str) -> IResult<&str, i64> {
     let (i, init) = p2_factor(i)?;
 
-    fold_many0(
+    return fold_many0(
         pair(char('+'), p2_factor),
-        init,
+        || init,
         |acc, (_, val): (char, i64)| acc + val,
-    )(i)
+    )(i);
 }
 
 fn p2_factor(i: &str) -> IResult<&str, i64> {

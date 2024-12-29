@@ -3,7 +3,7 @@ use nom::{
     branch::alt,
     bytes::complete::tag,
     character::complete::{alpha1, multispace0},
-    multi::separated_list,
+    multi::separated_list1,
     sequence::delimited,
     IResult,
 };
@@ -144,7 +144,7 @@ fn parse_allergens(i: &str) -> IResult<&str, Vec<&str>> {
 fn parse_words(i: &str) -> IResult<&str, Vec<&str>> {
     delimited(
         multispace0,
-        separated_list(alt((tag(" "), tag(", "))), alpha1),
+        separated_list1(alt((tag(" "), tag(", "))), alpha1),
         multispace0,
     )(i)
 }
