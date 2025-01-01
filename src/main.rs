@@ -17,7 +17,7 @@ mod y_2021;
 mod y_2024;
 
 fn main() {
-    solve(2024, 8);
+    solve(2024, 9);
     // for year in 2021..=2021 {
     //     for day in 1..=8 {
     //         solve(year, day);
@@ -126,6 +126,7 @@ fn get_solver(year: u32, day: u32) -> Result<fn() -> Box<dyn AoCSolver>, String>
             05 => Ok(|| Box::new(y_2024::day_05::Solver::create())),
             06 => Ok(|| Box::new(y_2024::day_06::Solver::create())),
             08 => Ok(|| Box::new(y_2024::day_08::Solver::create())),
+            09 => Ok(|| Box::new(y_2024::day_09::Solver::create())),
             _ => Err(format!(
                 "No solvers implemented for year {} day {}",
                 year, day
